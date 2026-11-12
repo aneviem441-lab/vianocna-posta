@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B2B Pre-Auth Terminal — Predautorizácia & Approval Code</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131a2e;
+      --panel-2: #19233d;
+      --border: #263459;
+      --text: #e6ecff;
+      --muted: #93a4cc;
+      --accent: #4f8cff;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --err: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 24px; }
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 20px; margin: 0; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 600;
+      background: var(--panel-2); border: 1px solid var(--border);
+    }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .kpi .label { color: var(--muted); font-size: 12px; }
+    .kpi .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .card h2 { font-size: 15px; margin: 0 0 12px 0; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); font-size: 13px; margin-bottom: 10px;
+    }
+    textarea { font-family: ui-monospace, Consolas, monospace; min-height: 92px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      background: var(--accent); color: #fff; border: none; border-radius: 6px;
+      padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    button:hover { opacity: 0.92; }
+    button.sec { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); }
+    button.ok { background: #15803d; }
+    button.warn { background: #b45309; }
+    button.err { background: #b91c1c; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .msg {
+      margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 12px;
+      background: var(--panel-2); border: 1px solid var(--border); display: none;
+    }
+    .msg.show { display: block; }
+    .msg.error { border-color: var(--err); color: #fecaca; }
+    .msg.success { border-color: var(--ok); color: #bbf7d0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    code { font-family: ui-monospace, Consolas, monospace; background: var(--bg); padding: 2px 5px; border-radius: 4px; }
+    .badge { padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .AUTHORIZED { background: #1e3a8a; color: #bfdbfe; }
+    .PARTIALLY_CAPTURED { background: #78350f; color: #fde68a; }
+    .CAPTURED { background: #14532d; color: #bbf7d0; }
+    .VOIDED, .EXPIRED { background: #450a0a; color: #fecaca; }
+    .PENDING_APPROVAL { background: #312e81; color: #c7d2fe; }
+    .table-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>B2B Pre-Auth Terminal</h1>
+        <div class="sub">Predautorizácia (Hold) → Approval Code → Čiastočné / Plné zúčtovanie (Capture) alebo Void</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="password" id="apiKeyInput" placeholder="X-API-Key (ak je zapnutý)" style="margin:0;width:190px;" />
+        <div id="healthPill" class="pill">Načítavam stav...</div>
+      </div>
+    </header>
+
+    <section class="kpis">
+      <div class="kpi"><div class="label">Autorizovaný objem</div><div class="val" id="kpiAuth">0.00</div></div>
+      <div class="kpi"><div class="label">Zúčtovaný objem (Capture)</div><div class="val" id="kpiCap">0.00</div></div>
+      <div class="kpi"><div class="label">Aktívne blokované (Hold)</div><div class="val" id="kpiHeld">0.00</div></div>
+      <div class="kpi"><div class="label">Počet transakcií</div><div class="val" id="kpiCount">0</div></div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>1. Nová predautorizácia (Hold)</h2>
+        <form id="createForm">
+          <div class="row">
+            <div>
+              <label>Suma</label>
+              <input type="number" step="0.01" min="0.01" id="cAmount" value="1250.00" required />
+            </div>
+            <div>
+              <label>Mena</label>
+              <input type="text" id="cCurrency" value="EUR" maxlength="3" required />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Referencia / Faktúra</label>
+              <input type="text" id="cRef" placeholder="INV-2026-001" required />
+            </div>
+            <div>
+              <label>Procesor</label>
+              <select id="cProcessor">
+                <option value="simulator">Simulator (POS / Vydavateľ)</option>
+                <option value="paypal_sandbox">PayPal Sandbox (Orders v2 AUTHORIZE)</option>
+                <option value="paypal_live">PayPal Live (Orders v2 AUTHORIZE)</option>
+                <option value="stripe">Stripe (PaymentIntents manual)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Zákazník / Firma</label>
+              <input type="text" id="cCustomer" value="ACME Logistics s.r.o." />
+            </div>
+            <div>
+              <label>Maskovaný token (bez PAN/CVV)</label>
+              <input type="text" id="cMask" value="VISA-TOKEN-****4242" />
+            </div>
+          </div>
+          <button type="submit">Vytvoriť predautorizáciu</button>
+          <div id="createMsg" class="msg"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>2. Vyhľadať podľa Approval Code &amp; Zúčtovať</h2>
+        <div class="row">
+          <div>
+            <label>Approval Code / Auth ID / PA-ID</label>
+            <input type="text" id="lCode" placeholder="napr. AB12CD alebo AUTH-..." />
+          </div>
+          <div style="display:flex;align-items:flex-end;margin-bottom:10px;">
+            <button type="button" id="lookupBtn" style="width:100%;">Vyhľadať</button>
+          </div>
+        </div>
+        <div id="lookupDetail" class="msg"></div>
+        <div id="actionBox" style="display:none; margin-top:10px;">
+          <div class="row">
+            <div>
+              <label>Suma na Capture (prázdne = zostatok)</label>
+              <input type="number" step="0.01" min="0.01" id="capAmount" />
+            </div>
+            <div>
+              <label>Typ Capture</label>
+              <select id="capFinal">
+                <option value="auto">Automaticky (final ak = zostatok)</option>
+                <option value="false">Čiastočné (ponechať hold otvorený)</option>
+                <option value="true">Finálne (uzavrieť hold)</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="ok" id="btnCapture">Capture</button>
+            <button type="button" class="sec" id="btnReauth">Reauthorize</button>
+            <button type="button" class="err" id="btnVoid">Void (Uvoľniť)</button>
+            <button type="button" class="warn" id="btnPpAuth" style="display:none;">PayPal Authorize</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>3. Hromadné spracovanie (Batch Pre-Auth / Capture)</h2>
+        <label>JSON pole položiek</label>
+        <textarea id="batchJson">[
+  { "amount": 500, "currency": "EUR", "reference": "BATCH-001", "customerLabel": "Partner A" },
+  { "amount": 1800, "currency": "EUR", "reference": "BATCH-002", "customerLabel": "Partner B" }
+]</textarea>
+        <div class="btn-row">
+          <button type="button" id="btnBatchCreate">Batch Pre-Auth</button>
+          <button type="button" class="ok" id="btnBatchCapture">Batch Capture (podľa approvalCode)</button>
+        </div>
+        <div id="batchMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+        <h2 style="margin:0;">Register predautorizácií (Live Ledger)</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="filterQ" placeholder="Filter..." style="margin:0;width:180px;" />
+          <button type="button" class="sec" id="exportCsvBtn">Export CSV</button>
+          <button type="button" class="sec" id="exportXmlBtn">Export XML</button>
+          <button type="button" class="sec" id="refreshBtn">Obnoviť</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID / Ref</th>
+              <th>Approval Code</th>
+              <th>Authorization ID</th>
+              <th>Zákazník / Procesor</th>
+              <th>Autorizované</th>
+              <th>Zúčtované</th>
+              <th>Zostatok</th>
+              <th>Stav</th>
+              <th>Akcia</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid" style="margin-top:20px;">
+      <div class="card">
+        <h2>4. Požiadať o cenovú ponuku / Ukážku</h2>
+        <form id="leadForm">
+          <div class="row">
+            <div>
+              <label>Meno a priezvisko</label>
+              <input type="text" id="leadName" placeholder="Ján Novák" required />
+            </div>
+            <div>
+              <label>Firma</label>
+              <input type="text" id="leadCompany" placeholder="Autopožičovňa s.r.o." />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>E-mail</label>
+              <input type="email" id="leadEmail" placeholder="jan@firma.sk" required />
+            </div>
+            <div>
+              <label>Odhadovaný mesačný objem</label>
+              <input type="text" id="leadVolume" placeholder="napr. 25 000 EUR / mes." />
+            </div>
+          </div>
+          <label>Poznámka / Požiadavka</label>
+          <textarea id="leadNotes" style="min-height:64px;" placeholder="Napojenie na Stripe/PayPal a export do nášho ERP..."></textarea>
+          <button type="submit">Odoslať žiadosť o cenovú ponuku</button>
+          <div id="leadMsg" class="msg"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h2 style="margin:0;">Prijaté dopyty (Lead Tracker)</h2>
+          <button type="button" class="sec" id="refreshLeadsBtn">Obnoviť dopyty</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Kontakt / Firma</th>
+                <th>Objem &amp; Poznámka</th>
+                <th>Stav</th>
+              </tr>
+            </thead>
+            <tbody id="leadsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let activeRecord = null;
+
+    function showMsg(el, text, type = 'success') {
+      el.textContent = text;
+      el.className = `msg show ${type}`;
+    }
+
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    apiKeyInput.value = sessionStorage.getItem('preauth_api_key') || '';
+    apiKeyInput.addEventListener('change', () => {
+      sessionStorage.setItem('preauth_api_key', apiKeyInput.value.trim());
+      refreshAll();
+    });
+
+    function authHeaders() {
+      const k = apiKeyInput.value.trim();
+      return k ? { 'X-API-Key': k } : {};
+    }
+
+    async function api(url, opts = {}) {
+      const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(opts.headers || {}) },
+        ...opts
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function refreshAll() {
+      const [health, summary, list] = await Promise.all([
+        api('/api/health'),
+        api('/api/summary'),
+        api('/api/preauths' + (document.getElementById('filterQ').value ? '?q=' + encodeURIComponent(document.getElementById('filterQ').value) : ''))
+      ]);
+      document.getElementById('healthPill').textContent =
+        `Režim: ${health.defaultProcessor} | PayPal: ${health.paypalConfigured ? 'OK' : 'Off'} | Stripe: ${health.stripeConfigured ? 'OK' : 'Off'} | Auth: ${health.authEnabled ? 'RBAC' : 'Dev'}`;
+      document.getElementById('kpiAuth').textContent = summary.authorizedVolume.toFixed(2);
+      document.getElementById('kpiCap').textContent = summary.capturedVolume.toFixed(2);
+      document.getElementById('kpiHeld').textContent = summary.remainingHeldVolume.toFixed(2);
+      document.getElementById('kpiCount').textContent = summary.totalCount;
+
+      const tbody = document.getElementById('ledgerBody');
+      tbody.innerHTML = '';
+      for (const r of list.items) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code>${r.id}</code><br><span class="sub">${r.reference}</span></td>
+          <td><code>${r.approvalCode || '-'}</code></td>
+          <td><code>${r.authorizationId || r.orderId || '-'}</code></td>
+          <td>${r.customerLabel}<br><span class="sub">${r.processor}</span></td>
+          <td>${r.authorizedAmount.toFixed(2)} ${r.currency}</td>
+          <td>${r.capturedAmount.toFixed(2)} ${r.currency}</td>
+          <td>${r.remainingAmount.toFixed(2)} ${r.currency}</td>
+          <td><span class="badge ${r.status}">${r.status}</span></td>
+          <td><button type="button" class="sec" data-select="${r.id}">Vybrať</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll('[data-select]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.getElementById('lCode').value = btn.getAttribute('data-select');
+          doLookup();
+        });
+      });
+    }
+
+    function renderActive(record) {
+      activeRecord = record;
+      const box = document.getElementById('lookupDetail');
+      const actions = document.getElementById('actionBox');
+      const ppBtn = document.getElementById('btnPpAuth');
+      if (!record) {
+        box.className = 'msg';
+        actions.style.display = 'none';
+        return;
+      }
+      showMsg(
+        box,
+        `${record.id} | Stav: ${record.status} | Approval: ${record.approvalCode || '-'} | Zostatok: ${record.remainingAmount.toFixed(2)} ${record.currency}` +
+          (record.approveUrl ? ` | Approve URL: ${record.approveUrl}` : ''),
+        'success'
+      );
+      actions.style.display = 'block';
+      ppBtn.style.display = record.status === 'PENDING_APPROVAL' ? 'inline-block' : 'none';
+    }
+
+    async function doLookup() {
+      const code = document.getElementById('lCode').value.trim();
+      const box = document.getElementById('lookupDetail');
+      try {
+        const { record } = await api('/api/preauths/lookup?code=' + encodeURIComponent(code));
+        renderActive(record);
+      } catch (err) {
+        activeRecord = null;
+        document.getElementById('actionBox').style.display = 'none';
+        showMsg(box, err.message, 'error');
+      }
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('createMsg');
+      try {
+        const payload = {
+          amount: Number(document.getElementById('cAmount').value),
+          currency: document.getElementById('cCurrency').value,
+          reference: document.getElementById('cRef').value || `INV-${Date.now()}`,
+          processor: document.getElementById('cProcessor').value,
+          customerLabel: document.getElementById('cCustomer').value,
+          instrumentMask: document.getElementById('cMask').value
+        };
+        const { record } = await api('/api/preauths', { method: 'POST', body: JSON.stringify(payload) });
+        showMsg(msg, `Vytvorené: ${record.id} | Approval Code: ${record.approvalCode || 'čaká na PayPal schválenie'}`, 'success');
+        document.getElementById('lCode').value = record.approvalCode || record.id;
+        renderActive(record);
+        await refreshAll();
+      } catch (err) {
+        showMsg(msg, err.message, 'error');
+      }
+    });
+
+    document.getElementById('lookupBtn').addEventListener('click', doLookup);
+
+    document.getElementById('btnCapture').addEventListener('click', async () => {
+      if (!activeRecord) return;
+      const box = document.getElementById('lookupDetail');
+      try {
+        const amtRaw = document.getElementById('capAmount').value;
+        const finalSel = document.getElementById('capFinal').value;
+        const body = {};
+        if (amtRaw) body.amount = Number(amtRaw);
+        if (finalSel !== 'auto') body.finalCapture = finalSel === 'true';
+        const { record } = await api(`/api/preauths/${encodeURIComponent(activeRecord.id)}/capture`, {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
+        renderActive(record);
+        await refreshAll();
+      } catch (err) {
+        showMsg(box, err.message, 'error');
+      }
+    });
+
+    document.getElementById('btnReauth').addEventListener('click', async () => {
+      if (!activeRecord) return;
+      const box = document.getElementById('lookupDetail');
+      try {
+        const { record } = await api(`/api/preauths/${encodeURIComponent(activeRecord.id)}/reauthorize`, {
+          method: 'POST',
+          body: '{}'
+        });
+        renderActive(record);
+        await refreshAll();
+      } catch (err) {
+        showMsg(box, err.message, 'error');
+      }
+    });
+
+    document.getElementById('btnVoid').addEventListener('click', async () => {
+      if (!activeRecord) return;
+      const box = document.getElementById('lookupDetail');
+      try {
+        const { record } = await api(`/api/preauths/${encodeURIComponent(activeRecord.id)}/void`, {
+          method: 'POST',
+          body: '{}'
+        });
+        renderActive(record);
+        await refreshAll();
+      } catch (err) {
+        showMsg(box, err.message, 'error');
+      }
+    });
+
+    document.getElementById('btnPpAuth').addEventListener('click', async () => {
+      if (!activeRecord) return;
+      const box = document.getElementById('lookupDetail');
+      try {
+        const { record } = await api(`/api/preauths/${encodeURIComponent(activeRecord.id)}/authorize`, {
+          method: 'POST',
+          body: '{}'
+        });
+        renderActive(record);
+        await refreshAll();
+      } catch (err) {
+        showMsg(box, err.message, 'error');
+      }
+    });
+
+    async function runBatch(endpoint) {
+      const msg = document.getElementById('batchMsg');
+      try {
+        const items = JSON.parse(document.getElementById('batchJson').value);
+        const res = await api(endpoint, { method: 'POST', body: JSON.stringify({ items }) });
+        showMsg(msg, `Batch hotový: ${res.succeeded}/${res.total} úspešných, ${res.failed} zlyhalo.`, res.failed ? 'error' : 'success');
+        await refreshAll();
+      } catch (err) {
+        showMsg(msg, err.message, 'error');
+      }
+    }
+
+    document.getElementById('btnBatchCreate').addEventListener('click', () => runBatch('/api/preauths/batch'));
+    document.getElementById('btnBatchCapture').addEventListener('click', () => runBatch('/api/preauths/batch-capture'));
+    async function downloadExport(fmt) {
+      const q = document.getElementById('filterQ').value.trim();
+      const url = `/api/export/${fmt}` + (q ? `?q=${encodeURIComponent(q)}` : '');
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Export zlyhal');
+        return;
+      }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `preauth-export.${fmt}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById('exportCsvBtn').addEventListener('click', () => downloadExport('csv'));
+    document.getElementById('exportXmlBtn').addEventListener('click', () => downloadExport('xml'));
+    document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+    document.getElementById('filterQ').addEventListener('input', refreshAll);
+
+    async function refreshLeads() {
+      const tbody = document.getElementById('leadsBody');
+      try {
+        const data = await api('/api/leads');
+        tbody.innerHTML = '';
+        for (const l of data.items) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${l.name}</strong> (${l.company})<br><span class="sub">${l.email}</span></td>
+            <td>${l.monthlyVolume}<br><span class="sub">${l.notes || '-'}</span></td>
+            <td>
+              <select data-lead-status="${l.id}" style="margin:0;width:135px;">
+                ${['NEW','CONTACTED','DEMO_SCHEDULED','QUOTED','WON','ARCHIVED'].map(s => `<option value="${s}" ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll('[data-lead-status]').forEach((sel) => {
+          sel.addEventListener('change', async () => {
+            try {
+              await api(`/api/leads/${encodeURIComponent(sel.getAttribute('data-lead-status'))}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: sel.value })
+              });
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        });
+      } catch {
+        tbody.innerHTML = '<tr><td colspan="3" class="sub">Na zobrazenie dopytov zadajte API kľúč (ak je RBAC zapnutý).</td></tr>';
+      }
+    }
+
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('leadMsg');
+      try {
+        const payload = {
+          name: document.getElementById('leadName').value,
+          company: document.getElementById('leadCompany').value,
+          email: document.getElementById('leadEmail').value,
+          monthlyVolume: document.getElementById('leadVolume').value,
+          notes: document.getElementById('leadNotes').value
+        };
+        const { lead } = await api('/api/leads', { method: 'POST', body: JSON.stringify(payload) });
+        showMsg(msg, `Dopyt prijatý (${lead.id}). Ozveme sa vám s ukážkou a cenovou ponukou.`, 'success');
+        e.target.reset();
+        refreshLeads();
+      } catch (err) {
+        showMsg(msg, err.message, 'error');
+      }
+    });
+
+    document.getElementById('refreshLeadsBtn').addEventListener('click', refreshLeads);
+
+    refreshAll();
+    refreshLeads();
+  </script>
+</body>
+</html>
