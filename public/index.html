@@ -89,10 +89,27 @@
         <div class="sub">Predautorizácia (Hold) → Approval Code → Čiastočné / Plné zúčtovanie (Capture) alebo Void</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <a href="#leadSection" style="background:#22c55e;color:#0b1020;padding:6px 12px;border-radius:6px;font-weight:700;font-size:12px;text-decoration:none;">🚀 15 dní ZADARMO</a>
         <input type="password" id="apiKeyInput" placeholder="X-API-Key (ak je zapnutý)" style="margin:0;width:190px;" />
         <div id="healthPill" class="pill">Načítavam stav...</div>
       </div>
     </header>
+
+    <!-- Pilot Promo Banner -->
+    <section style="background:linear-gradient(135deg, #132448 0%, #173269 100%);border:1px solid #3b82f6;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+      <div style="max-width:760px;">
+        <span style="background:#3b82f6;color:#ffffff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;">B2B Pilotný program</span>
+        <h2 style="font-size:18px;margin:8px 0 4px 0;color:#ffffff;">Vyskúšajte terminál na 15 dní úplne ZADARMO</h2>
+        <p style="margin:0;font-size:13px;color:#cbd5e1;line-height:1.5;">
+          Ušetrite 30 – 50 € mesačne za prenájom fyzického POS terminálu. Blokujte kaucie a zálohy z mobilu, tabletu alebo webu za 2 sekundy s okamžitým Approval kódom. Žiadne viazanosti.
+        </p>
+      </div>
+      <div>
+        <a href="#leadSection" style="display:inline-block;background:#22c55e;color:#0b1020;font-weight:700;font-size:13px;padding:10px 18px;border-radius:8px;text-decoration:none;box-shadow:0 4px 12px rgba(34,197,94,0.35);">
+          Aktivovať 15 dní zadarmo →
+        </a>
+      </div>
+    </section>
 
     <section class="kpis">
       <div class="kpi"><div class="label">Autorizovaný objem</div><div class="val" id="kpiAuth">0.00</div></div>
@@ -226,33 +243,55 @@
       </div>
     </section>
 
-    <section class="grid" style="margin-top:20px;">
-      <div class="card">
-        <h2>4. Požiadať o cenovú ponuku / Ukážku</h2>
+    <section class="grid" id="leadSection" style="margin-top:20px;">
+      <div class="card" style="border:1px solid #3b82f6;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h2 style="margin:0;color:#60a5fa;">4. Aktivovať 15-dňový pilot ZADARMO</h2>
+          <span style="background:#15803d;color:#ffffff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;">0 € / 15 DNÍ</span>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 14px 0;">
+          Vyskúšajte terminál bez rizika. Žiadne viazanosti ani zriaďovacie poplatky. Po 15 dňoch transparentná sadzba: <strong>iba 29 € / mes. + 0.9 % z kaucie</strong>.
+        </p>
         <form id="leadForm">
           <div class="row">
             <div>
-              <label>Meno a priezvisko</label>
+              <label>Meno a priezvisko *</label>
               <input type="text" id="leadName" placeholder="Ján Novák" required />
             </div>
             <div>
-              <label>Firma</label>
+              <label>Názov firmy / Požičovne</label>
               <input type="text" id="leadCompany" placeholder="Autopožičovňa s.r.o." />
             </div>
           </div>
           <div class="row">
             <div>
-              <label>E-mail</label>
-              <input type="email" id="leadEmail" placeholder="jan@firma.sk" required />
+              <label>Firemný e-mail *</label>
+              <input type="email" id="leadEmail" placeholder="jan@autopozicovna.sk" required />
             </div>
             <div>
-              <label>Odhadovaný mesačný objem</label>
-              <input type="text" id="leadVolume" placeholder="napr. 25 000 EUR / mes." />
+              <label>Telefónne číslo (pre rýchlu aktiváciu) *</label>
+              <input type="tel" id="leadPhone" placeholder="+421 900 000 000" required />
             </div>
           </div>
-          <label>Poznámka / Požiadavka</label>
-          <textarea id="leadNotes" style="min-height:64px;" placeholder="Napojenie na Stripe/PayPal a export do nášho ERP..."></textarea>
-          <button type="submit">Odoslať žiadosť o cenovú ponuku</button>
+          <div class="row">
+            <div>
+              <label>Odhadovaný mesačný objem kaucií</label>
+              <input type="text" id="leadVolume" placeholder="napr. 15 000 – 40 000 EUR" />
+            </div>
+            <div>
+              <label>Preferované platby</label>
+              <select id="leadProcessor">
+                <option value="paypal_stripe">Platobné karty + PayPal</option>
+                <option value="stripe">Len platobné karty (Visa / Mastercard)</option>
+                <option value="trustpay">Lokálne slovenské banky / TrustPay</option>
+              </select>
+            </div>
+          </div>
+          <label>Poznámka / Špecifické požiadavky</label>
+          <textarea id="leadNotes" style="min-height:56px;" placeholder="Koľko pobočiek/áut máte, prípadne aký rezervačný systém používate..."></textarea>
+          <button type="submit" style="background:#22c55e;color:#0b1020;font-size:14px;padding:10px 16px;width:100%;">
+            🚀 Spustiť 15-dňový pilot ZADARMO
+          </button>
           <div id="leadMsg" class="msg"></div>
         </form>
       </div>
@@ -512,7 +551,7 @@
         for (const l of data.items) {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td><strong>${l.name}</strong> (${l.company})<br><span class="sub">${l.email}</span></td>
+            <td><strong>${l.name}</strong> (${l.company})<br><span class="sub">${l.email} | Tel: ${l.phone || '-'}</span></td>
             <td>${l.monthlyVolume}<br><span class="sub">${l.notes || '-'}</span></td>
             <td>
               <select data-lead-status="${l.id}" style="margin:0;width:135px;">
@@ -547,11 +586,14 @@
           name: document.getElementById('leadName').value,
           company: document.getElementById('leadCompany').value,
           email: document.getElementById('leadEmail').value,
+          phone: document.getElementById('leadPhone').value,
           monthlyVolume: document.getElementById('leadVolume').value,
-          notes: document.getElementById('leadNotes').value
+          preferredProcessor: document.getElementById('leadProcessor').value,
+          notes: document.getElementById('leadNotes').value,
+          source: '15d_pilot_form'
         };
         const { lead } = await api('/api/leads', { method: 'POST', body: JSON.stringify(payload) });
-        showMsg(msg, `Dopyt prijatý (${lead.id}). Ozveme sa vám s ukážkou a cenovou ponukou.`, 'success');
+        showMsg(msg, `Ďakujeme! Váš 15-dňový pilot ZADARMO bol aktivovaný (ID: ${lead.id}). Do 2 hodín vás budeme kontaktovať.`, 'success');
         e.target.reset();
         refreshLeads();
       } catch (err) {

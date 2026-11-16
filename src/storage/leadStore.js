@@ -65,6 +65,7 @@ export class LeadStore {
       name,
       company: company || 'N/A',
       email,
+      phone: String(input.phone || '').trim() || 'Neuvedené',
       monthlyVolume: String(input.monthlyVolume || '').trim() || 'Neuvedené',
       preferredProcessor: String(input.preferredProcessor || 'paypal_stripe').trim(),
       notes: String(input.notes || '').trim(),
