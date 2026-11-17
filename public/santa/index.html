@@ -304,64 +304,50 @@
       </div>
     </section>
 
-    <!-- Booking / Customization Box -->
+    <!-- Quick 1-Step Booking Box with Apple Pay, Cards & PayPal -->
     <section class="order-box" id="booking">
-      <h2>Step 1: Personalize Your Child's Call</h2>
-      <p class="sub">Tell Santa who he's speaking to so he can mention it during the call!</p>
+      <h2>🎄 Start Your Child's Call with Santa</h2>
+      <p class="sub">Just enter child's name and choose your preferred fast payment below!</p>
 
-      <form id="callForm">
-        <div class="form-grid">
-          <div>
-            <label>Child's First Name *</label>
-            <input type="text" id="childName" placeholder="e.g. Liam, Emma, Oliver" required maxlength="30" />
-          </div>
-          <div>
-            <label>Child's Age (Optional)</label>
-            <input type="number" id="childAge" placeholder="e.g. 5" min="1" max="14" />
-          </div>
+      <div style="max-width:440px;margin:0 auto 18px;text-align:left;">
+        <label style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:6px;">Child's First Name *</label>
+        <input type="text" id="childName" placeholder="e.g. Liam, Emma, Oliver" value="Oliver" required maxlength="30" style="font-size:16px;padding:12px 14px;border:2px solid var(--gold);text-align:center;font-weight:700;" />
+      </div>
+
+      <div class="plans" style="max-width:520px;margin:0 auto 20px;">
+        <div class="plan-card active" data-plan="single" data-price="4.99">
+          <div class="plan-title">🎄 Live Call Pass</div>
+          <div class="plan-price">$4.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
+          <div class="plan-desc">Full 2-minute live voice conversation with Santa.</div>
+        </div>
+        <div class="plan-card" data-plan="bundle" data-price="5.99">
+          <div class="plan-badge">Most Popular</div>
+          <div class="plan-title">⭐ Call + Diploma</div>
+          <div class="plan-price">$5.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
+          <div class="plan-desc">Live call + Official Signed Nice List Diploma download.</div>
+        </div>
+      </div>
+
+      <!-- Instant Express Payment Box -->
+      <div style="max-width:440px;margin:0 auto;background:rgba(255,255,255,0.03);padding:18px;border-radius:14px;border:1px solid var(--card-border);">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="background:#000;color:#fff;border:1px solid #475569;padding:5px 12px;border-radius:6px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+            Pay Apple Pay
+          </span>
+          <span style="background:rgba(255,255,255,0.08);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;">
+            💳 Credit / Debit Card
+          </span>
+          <span style="background:#003087;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;">
+            PayPal
+          </span>
         </div>
 
-        <div class="form-grid">
-          <div>
-            <label>What should Santa praise them for? *</label>
-            <select id="praiseTopic">
-              <option value="good_behavior">⭐ Being kind, sharing, and super well-behaved</option>
-              <option value="school_grades">📚 Great effort at school / kindergarten</option>
-              <option value="tidy_room">🧸 Tidying up toys and helping around the house</option>
-              <option value="healthy_eating">🥦 Eating good meals and being big and strong</option>
-              <option value="christmas_wish">🎁 Pure Christmas excitement & wish list</option>
-            </select>
-          </div>
-          <div>
-            <label>Your Email (for receipt & certificate backup) *</label>
-            <input type="email" id="parentEmail" placeholder="mom.or.dad@gmail.com" required />
-          </div>
-        </div>
+        <div id="inline-paypal-container" style="min-height: 120px;"></div>
 
-        <div class="plans">
-          <div class="plan-card active" data-plan="single" data-price="4.99">
-            <div class="plan-title">🎄 Single Call Pass</div>
-            <div class="plan-price">$4.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
-            <div class="plan-desc">Full 2-minute live personalized voice call with Santa Claus for 1 child.</div>
-          </div>
-          <div class="plan-card" data-plan="bundle" data-price="5.99">
-            <div class="plan-badge">Most Popular · Save $1.00</div>
-            <div class="plan-title">⭐ Call + Official Diploma</div>
-            <div class="plan-price">$5.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
-            <div class="plan-desc">Full live call + Official North Pole Nice List Diploma included (high-res printable download).</div>
-          </div>
-          <div class="plan-card" data-plan="sibling" data-price="8.99">
-            <div class="plan-badge">Family Pack</div>
-            <div class="plan-title">🎅 Sibling 2-Call Bundle</div>
-            <div class="plan-price">$8.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
-            <div class="plan-desc">2 separate full calls for siblings or friends + 2 Official Signed Diplomas included.</div>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-main" id="startCallBtn">
-          🎅 Start Live Call With Santa ($4.99)
-        </button>
-      </form>
+        <p style="text-align:center;font-size:11px;color:#94a3b8;margin-top:10px;">
+          🔒 256-bit Encrypted SSL · Instant Access (No App Download)
+        </p>
+      </div>
     </section>
 
     <!-- How it works -->
@@ -392,24 +378,8 @@
     </footer>
   </div>
 
-  <!-- PayPal Payment Modal -->
-  <div id="paypalModal">
-    <div class="modal-card">
-      <button type="button" class="close-modal" id="closeModal">&times;</button>
-      <h3 style="font-family:'Cinzel',serif;color:var(--gold);margin-bottom:6px;">Complete Secure Checkout</h3>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
-        Live Call Ticket for: <strong id="modalChildName" style="color:#fff">Child</strong> (<span id="modalAmount">$4.99 USD</span>)
-      </p>
-      
-      <div id="paypal-button-container" style="min-height: 120px;"></div>
-      <p style="text-align:center;font-size:11px;color:#64748b;margin-top:10px;">
-        🔒 256-bit Encrypted SSL · Supports Credit/Debit Cards, PayPal &amp; Apple Pay
-      </p>
-    </div>
-  </div>
-
-  <!-- PayPal SDK script -->
-  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card"></script>
+  <!-- PayPal SDK script with Apple Pay, Cards & PayPal support -->
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card,applepay,venmo"></script>
 
   <script>
     // Source Code Protection Shield
@@ -537,52 +507,32 @@
 
     audioPreviewBtn.addEventListener('click', handleAudioPreview);
 
-    // Modal controls
-    const modal = document.getElementById('paypalModal');
-    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
-
-    // Handle Form Submit
-    let currentCallData = {};
-    document.getElementById('callForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      currentCallData = {
-        name: document.getElementById('childName').value.trim(),
-        age: document.getElementById('childAge').value,
-        topic: document.getElementById('praiseTopic').value,
-        email: document.getElementById('parentEmail').value.trim(),
-        plan: selectedPlan,
-        price: selectedPrice
-      };
-
-      document.getElementById('modalChildName').textContent = currentCallData.name;
-      document.getElementById('modalAmount').textContent = `$${selectedPrice.toFixed(2)} USD`;
-      modal.classList.add('active');
-
-      renderPayPalButtons();
-    });
-
-    let ppButtonsRendered = false;
-    function renderPayPalButtons() {
-      if (ppButtonsRendered) return;
-      const container = document.getElementById('paypal-button-container');
-      container.innerHTML = '';
+    // Express 1-Click Payment Initialization (Apple Pay, Cards & PayPal)
+    function initInlinePayment() {
+      const container = document.getElementById('inline-paypal-container');
+      if (!container) return;
 
       if (!window.paypal) {
-        container.innerHTML = '<p style="color:#f87171;font-size:13px;text-align:center;">Payment system is initializing, please refresh the page.</p>';
+        container.innerHTML = '<p style="color:#f87171;font-size:13px;text-align:center;">Payment system is initializing, please wait a moment...</p>';
+        setTimeout(initInlinePayment, 1000);
         return;
       }
 
+      container.innerHTML = '';
       window.paypal.Buttons({
         style: {
           layout: 'vertical',
           color: 'gold',
           shape: 'pill',
-          label: 'paypal'
+          label: 'pay'
         },
         createOrder: function(data, actions) {
+          const nameInput = document.getElementById('childName');
+          const childName = (nameInput && nameInput.value ? nameInput.value : 'Oliver').trim();
+
           return actions.order.create({
             purchase_units: [{
-              description: `Santa North Pole Live Call Pass for ${currentCallData.name}`,
+              description: `Santa North Pole Live Call Pass for ${childName}`,
               amount: {
                 currency_code: 'USD',
                 value: selectedPrice.toFixed(2)
@@ -592,35 +542,41 @@
         },
         onApprove: function(data, actions) {
           return actions.order.capture().then(function(details) {
-            // Forward payment event to server for ledger & monitoring
+            const nameInput = document.getElementById('childName');
+            const childName = (nameInput && nameInput.value ? nameInput.value : 'Oliver').trim();
+            const hasCert = selectedPlan === 'bundle' ? '1' : '0';
+            const ticket = details.id || `TKT-${Date.now()}`;
+
+            // Background webhook notice
             fetch('/api/webhooks/paypal', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 id: details.id,
                 event_type: 'PAYMENT.CAPTURE.COMPLETED',
-                summary: `Santa Live Call Pass - ${currentCallData.name}`,
+                summary: `Santa Live Call Pass - ${childName}`,
                 amount: selectedPrice,
                 currency: 'USD',
-                payerEmail: details.payer?.email_address || currentCallData.email,
+                payerEmail: details.payer?.email_address,
                 status: 'COMPLETED',
-                raw: { orderId: data.orderID, captureId: details.id, childName: currentCallData.name, plan: currentCallData.plan }
+                raw: { orderId: data.orderID, captureId: details.id, childName: childName, plan: selectedPlan }
               })
             }).catch(() => {});
 
-            // Redirect to live call with verified ticket
-            const ticket = details.id || `TKT-${Date.now()}`;
-            const hasCert = (currentCallData.plan === 'bundle' || currentCallData.plan === 'sibling') ? '1' : '0';
-            const targetUrl = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(currentCallData.name)}&topic=${encodeURIComponent(currentCallData.topic)}&age=${encodeURIComponent(currentCallData.age)}&plan=${encodeURIComponent(currentCallData.plan)}&cert=${hasCert}`;
-            window.location.href = targetUrl;
+            // Instant redirect to live call
+            window.location.href = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(childName)}&cert=${hasCert}`;
           });
         },
-        onError: function(err) {
+        onError: function() {
           alert("Payment could not be completed. Please try again.");
         }
-      }).render('#paypal-button-container');
+      }).render('#inline-paypal-container');
+    }
 
-      ppButtonsRendered = true;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initInlinePayment);
+    } else {
+      setTimeout(initInlinePayment, 500);
     }
   </script>
 </body>

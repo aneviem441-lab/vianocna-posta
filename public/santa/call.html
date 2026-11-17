@@ -133,6 +133,30 @@
       font-size: 15px; color: #fff; min-height: 58px;
     }
 
+    .chip-btn {
+      background: rgba(245, 196, 81, 0.12);
+      border: 1px solid rgba(245, 196, 81, 0.5);
+      color: #fff;
+      padding: 9px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      touch-action: manipulation;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .chip-btn:hover, .chip-btn:active {
+      background: var(--gold);
+      color: #070d1e;
+      border-color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 196, 81, 0.4);
+    }
+
     .mic-status {
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 12px; color: #4ade80; font-weight: 600;
@@ -227,6 +251,9 @@
       <div class="speech-bubble" id="speechBubble">
         Connecting to Santa...
       </div>
+
+      <!-- Quick Interactive Answer Chips & Voice Feedback -->
+      <div id="quickAnswers" style="display:none;margin-top:14px;gap:8px;flex-wrap:wrap;justify-content:center;max-width:600px;width:100%;"></div>
     </div>
 
     <!-- Screen 3: Official Certificate -->
@@ -407,27 +434,102 @@
       setTimeout(done, 15000);
     }
 
-    // Interactive child listening mode (with fallback if child is shy or silent)
+    // High-Sensitivity Voice & Tap Listener (Multi-Layer Engine)
     let activeSpeechRecognition = null;
     let latestChildHeard = '';
+    let isSantaListening = false;
 
-    function listenToChild(promptText, maxWaitMs, onDone) {
+    function startSpeechEngine() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      try {
+        if (activeSpeechRecognition) {
+          try { activeSpeechRecognition.abort(); } catch(e) {}
+        }
+        activeSpeechRecognition = new SpeechRec();
+        activeSpeechRecognition.continuous = true;
+        activeSpeechRecognition.interimResults = true; // Instant real-time syllable recognition!
+        activeSpeechRecognition.maxAlternatives = 3;
+
+        activeSpeechRecognition.onresult = (e) => {
+          let interim = '';
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              final += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          const spoken = (final || interim).trim();
+          if (spoken && isSantaListening && typeof window._onChildSpoke === 'function') {
+            window._onChildSpoke(spoken);
+          }
+        };
+
+        activeSpeechRecognition.onerror = () => {};
+
+        activeSpeechRecognition.onend = () => {
+          // Keep recognition alive while Santa is listening
+          if (isSantaListening) {
+            try { activeSpeechRecognition.start(); } catch(e) {}
+          }
+        };
+
+        try { activeSpeechRecognition.start(); } catch(e) {}
+      } catch(e) {}
+    }
+
+    function listenToChild(promptText, quickChips, maxWaitMs, onDone) {
+      isSantaListening = true;
       santaMouth.classList.remove('talking');
-      speechBubble.innerHTML = `🎙️ <em>${promptText}</em><br><span style="font-size:13px;color:var(--gold);margin-top:6px;display:inline-block;">(Santa is listening to you... speak into your microphone!)</span>`;
+      startSpeechEngine();
+
+      speechBubble.innerHTML = `🎙️ <strong style="color:#fff">${promptText}</strong><br><span style="font-size:12px;color:var(--gold);margin-top:4px;display:inline-block;">👂 Speak to Santa or tap your answer below:</span>`;
       const micEl = document.getElementById('micStatus');
-      if (micEl) micEl.textContent = '👂 Santa is listening to you...';
+      if (micEl) micEl.innerHTML = '<span style="color:#22c55e;animation:pulse 1s infinite;">🟢 🎙️ Santa is listening to you right now...</span>';
+
+      const chipsBox = document.getElementById('quickAnswers');
+      chipsBox.innerHTML = '';
+      if (quickChips && quickChips.length > 0) {
+        quickChips.forEach(chipText => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.textContent = chipText;
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleHeard(chipText);
+          });
+          chipsBox.appendChild(btn);
+        });
+        chipsBox.style.display = 'flex';
+      }
 
       latestChildHeard = '';
       let timer = null;
       let completed = false;
 
+      function handleHeard(text) {
+        if (completed) return;
+        latestChildHeard = text;
+        speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold);font-size:16px;">"${text}"</strong>`;
+        chipsBox.style.display = 'none';
+        clearTimeout(timer);
+        timer = setTimeout(finishListening, 1200);
+      }
+
       function finishListening() {
         if (completed) return;
         completed = true;
+        isSantaListening = false;
         clearTimeout(timer);
+        chipsBox.style.display = 'none';
+
         if (latestChildHeard) {
-          speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold)">"${latestChildHeard}"</strong>`;
-          setTimeout(() => { onDone(latestChildHeard); }, 1400);
+          speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold);font-size:16px;">"${latestChildHeard}"</strong>`;
+          setTimeout(() => { onDone(latestChildHeard); }, 1000);
         } else {
           onDone('');
         }
@@ -435,13 +537,8 @@
 
       timer = setTimeout(finishListening, maxWaitMs);
 
-      // Store callback for speech recognition event
       window._onChildSpoke = function(transcript) {
-        latestChildHeard = transcript;
-        speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold)">"${transcript}"</strong>`;
-        // Give 1.4s after speech before Santa responds
-        clearTimeout(timer);
-        timer = setTimeout(finishListening, 1400);
+        handleHeard(transcript);
       };
     }
 
@@ -465,7 +562,6 @@
 
       try { startHolidayMusic(); } catch(err) {}
       startCallTimer();
-      try { setupSpeechRecognition(); } catch(err) {}
       startInteractiveCall();
     }
 
@@ -503,7 +599,8 @@
     // Step 1: Did you listen & behave all year? (User: "či posluchali celý rok")
     function step1_listenAllYear() {
       playSantaAudio('/santa/assets/santa-call-q1-listen-all-year.mp3', "Tell me, my dear friend, have you been good and listened to your parents all year long? Tell Santa, I am listening!", () => {
-        listenToChild("Have you been good and listened all year?", 6000, () => {
+        const chips = ["⭐ Yes, I was very good!", "😇 I listened to parents!", "💖 I tried my best!"];
+        listenToChild("Have you been good and listened all year?", chips, 6500, () => {
           playSantaAudio('/santa/assets/santa-call-r1-listen-reaction.mp3', "Ho ho ho! That is music to my ears! The elves and Mrs. Claus always smile when children try their very best to be good and kind!", () => {
             step2_gifts();
           });
@@ -514,7 +611,8 @@
     // Step 2: What presents/gifts do you want? (User: "a čo chcu dostat aké darčeky")
     function step2_gifts() {
       playSantaAudio('/santa/assets/santa-call-q2-gifts.mp3', "Now tell me, what special gifts or presents are you wishing to get for Christmas this year? Tell Santa all about them!", () => {
-        listenToChild("What gifts are you wishing to get for Christmas?", 6500, () => {
+        const chips = ["🧸 Toys & Lego!", "🎮 Video Game / Console!", "🚲 Bicycle / Scooter!", "🎁 Surprise Me!"];
+        listenToChild("What gifts are you wishing to get for Christmas?", chips, 7000, () => {
           playSantaAudio('/santa/assets/santa-call-r2-gifts-reaction.mp3', "Ho ho ho! That sounds like a truly magical Christmas wish! My workshop elves are working extra hard right now making all the wonderful toys!", () => {
             step3_festiveFood();
           });
@@ -525,7 +623,8 @@
     // Step 3: What do you like to eat at Christmas? (User: "a čo radi jedia na vianoce")
     function step3_festiveFood() {
       playSantaAudio('/santa/assets/santa-call-q3-festive-food.mp3', "And tell me, what is your favorite festive food or sweet treat to eat at Christmas time? Cookies, gingerbread, or a yummy holiday dinner?", () => {
-        listenToChild("What is your favorite festive food or sweet treat?", 6000, () => {
+        const chips = ["🍪 Cookies & Milk!", "🍫 Sweet Chocolate!", "🍗 Yummy Holiday Dinner!", "🧁 Gingerbread!"];
+        listenToChild("What is your favorite festive food or sweet treat?", chips, 6500, () => {
           playSantaAudio('/santa/assets/santa-call-r3-food-reaction.mp3', "Mmm, that sounds absolutely delicious! Mrs. Claus and I love sweet Christmas treats too! And Rudolph the red-nosed reindeer always loves a crunchy carrot snack!", () => {
             step4_loveMost();
           });
@@ -536,7 +635,8 @@
     // Step 4: What do you love most about Christmas? (User: "a čo maju na vianociach najradsej")
     function step4_loveMost() {
       playSantaAudio('/santa/assets/santa-call-q4-love-most.mp3', "And tell me, my dear friend, what do you love the very most about Christmas time? The glistening snow, decorating the Christmas tree, or being with family?", () => {
-        listenToChild("What do you love most about Christmas time?", 6000, () => {
+        const chips = ["❄️ Snow & Snowmen!", "🎄 Christmas Tree Lights!", "👨‍👩‍👧 Family Warmth & Hugs!", "🎁 Opening Presents!"];
+        listenToChild("What do you love most about Christmas time?", chips, 6500, () => {
           playSantaAudio('/santa/assets/santa-call-r4-love-reaction.mp3', "Ho ho ho! Being together with family, sharing warm hugs, and feeling the holiday love is truly the most magical part of Christmas in the whole world!", () => {
             step5_songPoem();
           });
@@ -547,7 +647,8 @@
     // Step 5: Christmas poem or song? (User: "či poznaju nejaku vianocnu basnicku a ze ci by mu kusok zaspievali")
     function step5_songPoem() {
       playSantaAudio('/santa/assets/santa-call-q5-song-poem.mp3', "Say, do you know a little Christmas poem, or could you sing Santa a little piece of a Christmas song? Like Jingle Bells? Santa would love to hear you sing or recite a little poem!", () => {
-        listenToChild("Sing a song or recite a Christmas poem for Santa!", 7500, () => {
+        const chips = ["🎵 Jingle Bells, Jingle Bells!", "⭐ Twinkle Twinkle Little Star!", "📜 A little Christmas Poem!"];
+        listenToChild("Sing a song or recite a Christmas poem for Santa!", chips, 8000, () => {
           playSantaAudio('/santa/assets/santa-call-r5-song-reaction.mp3', "Ho ho ho! Bravo! That was simply wonderful! That brought so much Christmas cheer all the way to the North Pole!", () => {
             step6_farewellMilkCookie();
           });
@@ -560,30 +661,6 @@
       playSantaAudio('/santa/assets/santa-call-q6-farewell-milk-cookie.mp3', "You have been such a joy to speak with! I want to tell you a secret: I will definitely come visit your home this Christmas! Make sure to go to sleep early on Christmas Eve, and I really hope I will find a cold glass of milk and a yummy cookie on the table for old Santa! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, my dear friend, and Merry Christmas to you and your whole family! Ho ho ho!", () => {
         setTimeout(endCall, 2000);
       });
-    }
-
-    // Voice recognition to let child talk back (safely wrapped for mobile Safari)
-    function setupSpeechRecognition() {
-      try {
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRec) {
-          activeSpeechRecognition = new SpeechRec();
-          activeSpeechRecognition.continuous = true;
-          activeSpeechRecognition.interimResults = false;
-          activeSpeechRecognition.lang = 'en-US';
-
-          activeSpeechRecognition.onresult = (e) => {
-            try {
-              const transcript = e.results[e.results.length - 1][0].transcript;
-              if (transcript && typeof window._onChildSpoke === 'function') {
-                window._onChildSpoke(transcript.slice(0, 50));
-              }
-            } catch(err) {}
-          };
-          activeSpeechRecognition.onerror = () => {};
-          try { activeSpeechRecognition.start(); } catch(err) {}
-        }
-      } catch(err) {}
     }
 
     document.getElementById('endCallBtn').addEventListener('click', endCall);
