@@ -68,7 +68,10 @@ export class LeadStore {
       phone: String(input.phone || '').trim() || 'Neuvedené',
       monthlyVolume: String(input.monthlyVolume || '').trim() || 'Neuvedené',
       preferredProcessor: String(input.preferredProcessor || 'paypal_stripe').trim(),
-      notes: String(input.notes || '').trim(),
+      notes: String(input.notes || input.message || '').trim(),
+      message: String(input.message || input.notes || '').trim(),
+      type: String(input.type || 'pilot_15d').trim(),
+      reply: String(input.reply || '').trim(),
       source: String(input.source || 'web_terminal').trim(),
       status: 'NEW',
       createdAt: now,
@@ -80,7 +83,7 @@ export class LeadStore {
     return structuredClone(lead);
   }
 
-  async updateStatus(id, { status, notes }) {
+  async updateStatus(id, { status, notes, reply }) {
     await this.init();
     const lead = this.leads.find((l) => l.id === id);
     if (!lead) {
@@ -95,6 +98,9 @@ export class LeadStore {
     }
     if (notes !== undefined) {
       lead.notes = String(notes).trim();
+    }
+    if (reply !== undefined) {
+      lead.reply = String(reply).trim();
     }
     lead.updatedAt = new Date().toISOString();
     await this.#persist();

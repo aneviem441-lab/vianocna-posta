@@ -245,35 +245,41 @@
 
     <section class="grid" id="leadSection" style="margin-top:20px;">
       <div class="card" style="border:1px solid #3b82f6;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <h2 style="margin:0;color:#60a5fa;">4. Aktivovať 15-dňový pilot ZADARMO</h2>
-          <span style="background:#15803d;color:#ffffff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;">0 € / 15 DNÍ</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="tabPilotBtn" style="background:#22c55e;color:#0b1020;padding:6px 12px;font-size:12px;">🚀 15 dní ZADARMO</button>
+            <button type="button" id="tabMsgBtn" class="sec" style="padding:6px 12px;font-size:12px;">💬 Napísať správu / Otázka</button>
+          </div>
+          <span id="tabBadge" style="background:#15803d;color:#ffffff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;">PILOT 0 €</span>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 14px 0;">
+        
+        <p id="tabDesc" style="font-size:12px;color:var(--muted);margin:0 0 14px 0;">
           Vyskúšajte terminál bez rizika. Žiadne viazanosti ani zriaďovacie poplatky. Po 15 dňoch transparentná sadzba: <strong>iba 29 € / mes. + 0.9 % z kaucie</strong>.
         </p>
+
         <form id="leadForm">
+          <input type="hidden" id="leadType" value="pilot_15d" />
           <div class="row">
             <div>
               <label>Meno a priezvisko *</label>
               <input type="text" id="leadName" placeholder="Ján Novák" required />
             </div>
             <div>
-              <label>Názov firmy / Požičovne</label>
+              <label id="companyLabel">Názov firmy / Požičovne</label>
               <input type="text" id="leadCompany" placeholder="Autopožičovňa s.r.o." />
             </div>
           </div>
           <div class="row">
             <div>
-              <label>Firemný e-mail *</label>
+              <label>E-mail *</label>
               <input type="email" id="leadEmail" placeholder="jan@autopozicovna.sk" required />
             </div>
             <div>
-              <label>Telefónne číslo (pre rýchlu aktiváciu) *</label>
+              <label id="phoneLabel">Telefónne číslo *</label>
               <input type="tel" id="leadPhone" placeholder="+421 900 000 000" required />
             </div>
           </div>
-          <div class="row">
+          <div class="row" id="pilotExtraRow">
             <div>
               <label>Odhadovaný mesačný objem kaucií</label>
               <input type="text" id="leadVolume" placeholder="napr. 15 000 – 40 000 EUR" />
@@ -287,9 +293,9 @@
               </select>
             </div>
           </div>
-          <label>Poznámka / Špecifické požiadavky</label>
-          <textarea id="leadNotes" style="min-height:56px;" placeholder="Koľko pobočiek/áut máte, prípadne aký rezervačný systém používate..."></textarea>
-          <button type="submit" style="background:#22c55e;color:#0b1020;font-size:14px;padding:10px 16px;width:100%;">
+          <label id="notesLabel">Poznámka / Špecifické požiadavky</label>
+          <textarea id="leadNotes" style="min-height:56px;" placeholder="Koľko áut/mechanizmov máte, alebo aké integrácie potrebujete..."></textarea>
+          <button type="submit" id="submitLeadBtn" style="background:#22c55e;color:#0b1020;font-size:14px;padding:10px 16px;width:100%;">
             🚀 Spustiť 15-dňový pilot ZADARMO
           </button>
           <div id="leadMsg" class="msg"></div>
@@ -298,15 +304,15 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h2 style="margin:0;">Prijaté dopyty (Lead Tracker)</h2>
-          <button type="button" class="sec" id="refreshLeadsBtn">Obnoviť dopyty</button>
+          <h2 style="margin:0;">Prijaté dopyty a správy (Live Hub)</h2>
+          <button type="button" class="sec" id="refreshLeadsBtn">Obnoviť</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Kontakt / Firma</th>
-                <th>Objem &amp; Poznámka</th>
+                <th>Kontakt / Typ</th>
+                <th>Otázka / Požiadavka</th>
                 <th>Stav</th>
               </tr>
             </thead>
@@ -550,9 +556,17 @@
         tbody.innerHTML = '';
         for (const l of data.items) {
           const tr = document.createElement('tr');
+          const typeLabel = l.type === 'contact_msg' ? '💬 Otázka / Investor' : '🚀 15d Pilot';
           tr.innerHTML = `
-            <td><strong>${l.name}</strong> (${l.company})<br><span class="sub">${l.email} | Tel: ${l.phone || '-'}</span></td>
-            <td>${l.monthlyVolume}<br><span class="sub">${l.notes || '-'}</span></td>
+            <td>
+              <strong>${l.name}</strong> (${l.company})<br>
+              <span class="sub">${l.email} | Tel: ${l.phone || '-'}</span><br>
+              <span class="badge ${l.type === 'contact_msg' ? 'AUTHORIZED' : 'CAPTURED'}">${typeLabel}</span>
+            </td>
+            <td>
+              <div style="font-size:12px;">${l.message || l.notes || '-'}</div>
+              ${l.reply ? `<div style="margin-top:4px;padding:4px 6px;background:var(--panel-2);border-left:2px solid var(--accent);font-size:11px;"><strong>Odpoveď:</strong> ${l.reply}</div>` : ''}
+            </td>
             <td>
               <select data-lead-status="${l.id}" style="margin:0;width:135px;">
                 ${['NEW','CONTACTED','DEMO_SCHEDULED','QUOTED','WON','ARCHIVED'].map(s => `<option value="${s}" ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}
@@ -578,22 +592,78 @@
       }
     }
 
+    const tabPilotBtn = document.getElementById('tabPilotBtn');
+    const tabMsgBtn = document.getElementById('tabMsgBtn');
+    const tabBadge = document.getElementById('tabBadge');
+    const tabDesc = document.getElementById('tabDesc');
+    const leadType = document.getElementById('leadType');
+    const pilotExtraRow = document.getElementById('pilotExtraRow');
+    const submitLeadBtn = document.getElementById('submitLeadBtn');
+    const notesLabel = document.getElementById('notesLabel');
+    const leadNotes = document.getElementById('leadNotes');
+
+    tabPilotBtn.addEventListener('click', () => {
+      tabPilotBtn.className = '';
+      tabPilotBtn.style.background = '#22c55e';
+      tabPilotBtn.style.color = '#0b1020';
+      tabMsgBtn.className = 'sec';
+      tabMsgBtn.style.background = '';
+      tabMsgBtn.style.color = '';
+      tabBadge.textContent = 'PILOT 0 €';
+      tabBadge.style.background = '#15803d';
+      tabDesc.innerHTML = 'Vyskúšajte terminál bez rizika. Žiadne viazanosti ani zriaďovacie poplatky. Po 15 dňoch transparentná sadzba: <strong>iba 29 € / mes. + 0.9 % z kaucie</strong>.';
+      leadType.value = 'pilot_15d';
+      pilotExtraRow.style.display = 'grid';
+      notesLabel.textContent = 'Poznámka / Špecifické požiadavky';
+      leadNotes.placeholder = 'Koľko áut/mechanizmov máte, alebo aké integrácie potrebujete...';
+      submitLeadBtn.textContent = '🚀 Spustiť 15-dňový pilot ZADARMO';
+      submitLeadBtn.style.background = '#22c55e';
+      submitLeadBtn.style.color = '#0b1020';
+    });
+
+    tabMsgBtn.addEventListener('click', () => {
+      tabMsgBtn.className = '';
+      tabMsgBtn.style.background = '#3b82f6';
+      tabMsgBtn.style.color = '#ffffff';
+      tabPilotBtn.className = 'sec';
+      tabPilotBtn.style.background = '';
+      tabPilotBtn.style.color = '';
+      tabBadge.textContent = 'PODPORA & INVESTÍCIE';
+      tabBadge.style.background = '#1d4ed8';
+      tabDesc.innerHTML = 'Máte otázku pre konateľa, záujem o partnerstvo, investíciu alebo technickú integráciu? Zanechajte nám správu.';
+      leadType.value = 'contact_msg';
+      pilotExtraRow.style.display = 'none';
+      notesLabel.textContent = 'Vaša správa / Otázka *';
+      leadNotes.placeholder = 'Dobrý deň, máme záujem o investičné podmienky / integráciu do nášho systému...';
+      submitLeadBtn.textContent = '✉️ Odoslať správu vedeniu';
+      submitLeadBtn.style.background = '#3b82f6';
+      submitLeadBtn.style.color = '#ffffff';
+    });
+
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const msg = document.getElementById('leadMsg');
       try {
+        const type = leadType.value;
         const payload = {
           name: document.getElementById('leadName').value,
           company: document.getElementById('leadCompany').value,
           email: document.getElementById('leadEmail').value,
           phone: document.getElementById('leadPhone').value,
-          monthlyVolume: document.getElementById('leadVolume').value,
-          preferredProcessor: document.getElementById('leadProcessor').value,
+          monthlyVolume: type === 'pilot_15d' ? document.getElementById('leadVolume').value : 'N/A',
+          preferredProcessor: type === 'pilot_15d' ? document.getElementById('leadProcessor').value : 'inbound_msg',
+          message: document.getElementById('leadNotes').value,
           notes: document.getElementById('leadNotes').value,
-          source: '15d_pilot_form'
+          type,
+          source: type === 'pilot_15d' ? '15d_pilot_form' : 'contact_form'
         };
-        const { lead } = await api('/api/leads', { method: 'POST', body: JSON.stringify(payload) });
-        showMsg(msg, `Ďakujeme! Váš 15-dňový pilot ZADARMO bol aktivovaný (ID: ${lead.id}). Do 2 hodín vás budeme kontaktovať.`, 'success');
+        const res = await api('/api/contact', { method: 'POST', body: JSON.stringify(payload) });
+        const lead = res.lead;
+        if (type === 'pilot_15d') {
+          showMsg(msg, `Ďakujeme! Váš 15-dňový pilot ZADARMO bol zaregistrovaný (ID: ${lead.id}). Náš systém ho spracováva.`, 'success');
+        } else {
+          showMsg(msg, `Vaša správa bola doručená priamo do centrály (ID: ${lead.id}). Náš AI riadiaci asistent pripravuje odpoveď.`, 'success');
+        }
         e.target.reset();
         refreshLeads();
       } catch (err) {

@@ -201,10 +201,24 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'POST' && path === '/api/leads') {
+      if (method === 'POST' && (path === '/api/leads' || path === '/api/contact')) {
         const body = await readJsonBody(req);
+        if (path === '/api/contact' && !body.source) body.source = 'contact_form';
         const lead = await leadStore.create(body);
-        sendJson(res, 201, { lead });
+        sendJson(res, 201, { ok: true, lead });
+        return;
+      }
+
+      const leadReplyMatch = path.match(/^\/api\/leads\/([^/]+)\/reply$/);
+      if (method === 'POST' && leadReplyMatch) {
+        auth.authenticate(req, 'operator');
+        const id = decodeURIComponent(leadReplyMatch[1]);
+        const body = await readJsonBody(req);
+        const lead = await leadStore.updateStatus(id, {
+          reply: body.reply || '',
+          status: body.status || 'CONTACTED'
+        });
+        sendJson(res, 200, { ok: true, lead });
         return;
       }
 

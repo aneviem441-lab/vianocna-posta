@@ -63,6 +63,36 @@ test('public quote/lead intake works while lead listing and status updates enfor
     assert.equal(patchRes.status, 200);
     const patched = await patchRes.json();
     assert.equal(patched.lead.status, 'DEMO_SCHEDULED');
+
+    // 5. Public contact inquiry endpoint works and records reply
+    const contactRes = await fetch(`${baseUrl}/api/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Michal Investor',
+        company: 'Venture Capital Fund',
+        email: 'michal@investor.com',
+        type: 'contact_msg',
+        message: 'Máme záujem o seed kolo 150k EUR.'
+      })
+    });
+    assert.equal(contactRes.status, 201);
+    const contactData = await contactRes.json();
+    assert.equal(contactData.lead.type, 'contact_msg');
+
+    // Operator replies to contact inquiry
+    const replyRes = await fetch(`${baseUrl}/api/leads/${contactData.lead.id}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'o-key' },
+      body: JSON.stringify({
+        reply: 'Dobrý deň, radi vám pošleme investičný teaser a term sheet.',
+        status: 'CONTACTED'
+      })
+    });
+    assert.equal(replyRes.status, 200);
+    const repliedData = await replyRes.json();
+    assert.equal(repliedData.lead.reply, 'Dobrý deň, radi vám pošleme investičný teaser a term sheet.');
+    assert.equal(repliedData.lead.status, 'CONTACTED');
   } finally {
     server.close();
   }
