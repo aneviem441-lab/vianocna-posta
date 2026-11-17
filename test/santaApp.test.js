@@ -24,11 +24,18 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     assert.ok(htmlCall.includes("Download Official Certificate (PNG)"));
     assert.ok(htmlCall.includes("Unlock Official Printable Diploma"));
     assert.ok(htmlCall.includes("North Pole Nice List"));
-    assert.ok(htmlCall.includes("getSantaVoice"));
+    assert.ok(htmlCall.includes("playSantaAudio"));
 
     const resMp3 = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.mp3`);
     assert.equal(resMp3.status, 200);
     assert.equal(resMp3.headers.get('content-type'), 'audio/mpeg');
+    assert.equal(resMp3.headers.get('accept-ranges'), 'bytes');
+
+    const resRange = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.mp3`, {
+      headers: { Range: 'bytes=0-1' }
+    });
+    assert.equal(resRange.status, 206);
+    assert.equal(resRange.headers.get('content-range'), 'bytes 0-1/109130');
 
     const resM4a = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.m4a`);
     assert.equal(resM4a.status, 200);

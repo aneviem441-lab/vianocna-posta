@@ -26,6 +26,16 @@
       user-select: none;
       -webkit-touch-callout: none;
     }
+    input, select, textarea, button {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
     img {
       -webkit-user-drag: none;
       user-drag: none;
@@ -344,50 +354,72 @@
 
     // Dialogue sequence in English tailored for child and topic
     let topicPraise = "You have been so kind, sharing with everyone and being so good this year!";
-    if (topic === 'school_grades') topicPraise = "The elves told me how hard you worked at school and how proud your family is!";
-    if (topic === 'tidy_room') topicPraise = "I heard you have been keeping your room so tidy and helping out so wonderfully!";
-    if (topic === 'healthy_eating') topicPraise = "Mrs. Claus told me you have been eating all your healthy meals to grow big and strong!";
-    if (topic === 'christmas_wish') topicPraise = "The elves in my workshop are getting all the toys ready for Christmas!";
-
-    const dialogueTurns = [
-      `Ho ho ho! Well hello there, ${childName}! Merry Christmas! It is so wonderful to hear your cheerful voice all the way from the North Pole!`,
-      `I have my big Golden Book right here by my desk! ${topicPraise}`,
-      `Tell me, ${childName}, what is the special wish you are hoping for this Christmas? I am listening!`,
-      `Ho ho ho! That sounds like a truly magical wish! The elves and reindeer are working extra hard in the workshop right now!`,
-      `Remember to keep spreading kindness and go to sleep early on Christmas Eve! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, ${childName}, and Merry Christmas!`
-    ];
+    let topicAudioKey = 'good_behavior';
+    if (topic === 'school_grades') {
+      topicPraise = "The elves told me how hard you worked at school and how proud your family is!";
+      topicAudioKey = 'school_grades';
+    } else if (topic === 'tidy_room') {
+      topicPraise = "I heard you have been keeping your room so tidy and helping out so wonderfully!";
+      topicAudioKey = 'tidy_room';
+    } else if (topic === 'healthy_eating') {
+      topicPraise = "Mrs. Claus told me you have been eating all your healthy meals to grow big and strong!";
+      topicAudioKey = 'healthy_eating';
+    } else if (topic === 'christmas_wish') {
+      topicPraise = "The elves in my workshop are getting all the toys ready for Christmas!";
+      topicAudioKey = 'christmas_wish';
+    }
 
     let currentTurn = 0;
     let timerSeconds = 120; // Full 2-minute call! No free preview.
     let timerInterval = null;
 
-    // Santa Voice Selection (excludes female and thin robotic profiles)
-    function getSantaVoice() {
-      if (!('speechSynthesis' in window)) return null;
-      const voices = window.speechSynthesis.getVoices() || [];
-      const isFemale = (v) => /female|zira|samantha|karen|victoria|susan|catherine|hazel|fiona|moira|siri female|siri voice 1/i.test(v.name + ' ' + (v.voiceURI || ''));
-      const males = voices.filter(v => v.lang.startsWith('en') && !isFemale(v));
-      const preferred = males.find(v => /google.*uk.*male|google.*english.*male/i.test(v.name)) ||
-                        males.find(v => /microsoft.*david|microsoft.*mark|guy/i.test(v.name)) ||
-                        males.find(v => /daniel|arthur|alex|oliver|george/i.test(v.name)) ||
-                        males.find(v => /male/i.test(v.name)) ||
-                        males[0] ||
-                        voices.find(v => !isFemale(v));
-      return preferred || null;
+    // Dedicated HTMLAudioElement for Santa's voice (100% Mobile & Safari Compatible)
+    const santaVoicePlayer = new Audio();
+    santaVoicePlayer.preload = 'auto';
+
+    function playSantaAudio(src, text, onFinished) {
+      speechBubble.textContent = text;
+      santaMouth.classList.add('talking');
+
+      let finished = false;
+      function done() {
+        if (finished) return;
+        finished = true;
+        santaMouth.classList.remove('talking');
+        if (onFinished) onFinished();
+      }
+
+      santaVoicePlayer.src = src;
+      santaVoicePlayer.currentTime = 0;
+      santaVoicePlayer.onended = done;
+      santaVoicePlayer.onerror = done;
+
+      const playPromise = santaVoicePlayer.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          // If browser policy delays or blocks, ensure dialogue progresses safely
+          setTimeout(done, 4000);
+        });
+      }
+
+      // Safety timeout: always advance dialogue even on silent mode or background tab
+      setTimeout(done, 14000);
     }
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
-    }
-
-    // Answer Call Handler (Supports tap & click on mobile)
+    // Answer Call Handler (Single clean click for mobile touch and desktop)
     const answerBtn = document.getElementById('answerBtn');
     let callAnswered = false;
 
-    function handleAnswerCall(e) {
-      if (e) e.preventDefault();
+    function handleAnswerCall() {
       if (callAnswered) return;
       callAnswered = true;
+
+      // Resume AudioContext if suspended (required for iOS Safari)
+      try {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch(err) {}
 
       ringingScreen.style.display = 'none';
       activeScreen.classList.add('active');
@@ -400,7 +432,6 @@
 
     if (answerBtn) {
       answerBtn.addEventListener('click', handleAnswerCall);
-      answerBtn.addEventListener('touchend', handleAnswerCall);
     }
 
     function startCallTimer() {
@@ -420,83 +451,44 @@
       }, 1000);
     }
 
-    function speakText(text, callback) {
-      speechBubble.textContent = text;
-      santaMouth.classList.add('talking');
-
-      let doneCalled = false;
-      function onDone() {
-        if (doneCalled) return;
-        doneCalled = true;
-        santaMouth.classList.remove('talking');
-        if (callback) callback();
-      }
-
-      if ('speechSynthesis' in window) {
-        try {
-          window.speechSynthesis.cancel();
-          const utt = new SpeechSynthesisUtterance(text);
-          utt.rate = 0.82;
-          utt.pitch = 0.65;
-          utt.lang = 'en-US';
-
-          const chosen = getSantaVoice();
-          if (chosen) utt.voice = chosen;
-
-          utt.onend = onDone;
-          utt.onerror = onDone;
-
-          setTimeout(() => {
-            try { window.speechSynthesis.speak(utt); } catch(e) { onDone(); }
-          }, 60);
-
-          // Mobile safety timer: ensures dialogue advances even if synthesis stalls on mobile iOS!
-          const wordCount = (text || '').split(' ').length;
-          const maxWait = Math.max(3800, wordCount * 550);
-          setTimeout(onDone, maxWait);
-        } catch(e) {
-          onDone();
-        }
-      } else {
-        setTimeout(onDone, 4000);
-      }
-    }
-
-    // Real Santa Audio Clip (Universal MP3 - 100% Mobile Compatible)
-    const realSantaAudio = new Audio('/santa/assets/santa-ho-ho-ho.mp3');
-    realSantaAudio.preload = 'auto';
-
     function startDialogue() {
       if (currentTurn === 0) {
-        speechBubble.textContent = "🎅 HO HO HO! Merry Christmas!";
-        santaMouth.classList.add('talking');
-
-        let advanced = false;
-        function proceed() {
-          if (advanced) return;
-          advanced = true;
-          santaMouth.classList.remove('talking');
-          speakText(dialogueTurns[0], () => {
-            currentTurn++;
-            if (timerSeconds > 10) setTimeout(startDialogue, 5000);
+        // Step 1: Authentic Ho Ho Ho from YouTube
+        playSantaAudio('/santa/assets/santa-ho-ho-ho.mp3', "🎅 HO HO HO! Merry Christmas!", () => {
+          // Step 2: Welcoming child warmly
+          playSantaAudio('/santa/assets/santa-turn0-welcome.mp3', `Well hello there, ${childName}! Merry Christmas! It is so wonderful to hear your cheerful voice all the way from the North Pole!`, () => {
+            currentTurn = 1;
+            if (timerSeconds > 10) setTimeout(startDialogue, 3500);
           });
-        }
-
-        realSantaAudio.currentTime = 0;
-        realSantaAudio.play().then(() => {
-          realSantaAudio.onended = proceed;
-          setTimeout(proceed, 4500); // 4.5s fallback
-        }).catch(() => {
-          proceed();
         });
-      } else if (currentTurn < dialogueTurns.length) {
-        speakText(dialogueTurns[currentTurn], () => {
-          currentTurn++;
-          if (currentTurn < dialogueTurns.length && timerSeconds > 10) {
-            setTimeout(startDialogue, 5000);
-          } else if (currentTurn >= dialogueTurns.length) {
-            setTimeout(endCall, 3000);
-          }
+      } else if (currentTurn === 1) {
+        // Turn 1: Praise topic from Santa's Golden Book
+        const praiseAudio = `/santa/assets/santa-turn1-${topicAudioKey}.mp3`;
+        playSantaAudio(praiseAudio, `I have my big Golden Book right here by my desk! ${topicPraise}`, () => {
+          currentTurn = 2;
+          if (timerSeconds > 10) setTimeout(startDialogue, 4000);
+        });
+      } else if (currentTurn === 2) {
+        // Turn 2: Santa asks for Christmas wish & listens to child
+        playSantaAudio('/santa/assets/santa-turn2-wish.mp3', `Now tell me, ${childName}, what is the special wish you are hoping for this Christmas? I am listening!`, () => {
+          speechBubble.textContent = `🎙️ Santa is listening carefully to ${childName}... Speak to Santa now!`;
+          const micEl = document.getElementById('micStatus');
+          if (micEl) micEl.textContent = '👂 Santa is listening to you...';
+          currentTurn = 3;
+          // Give child 6 seconds of speaking time
+          setTimeout(startDialogue, 6500);
+        });
+      } else if (currentTurn === 3) {
+        // Turn 3: Santa reacts warmly to wish
+        playSantaAudio('/santa/assets/santa-turn3-workshop.mp3', `Ho ho ho! That sounds like a truly magical wish! The elves and reindeer are working extra hard in my workshop right now!`, () => {
+          currentTurn = 4;
+          if (timerSeconds > 10) setTimeout(startDialogue, 4000);
+        });
+      } else if (currentTurn === 4) {
+        // Turn 4: Final farewell and awarding nice list certificate
+        playSantaAudio('/santa/assets/santa-turn4-closing.mp3', `Remember to keep spreading kindness and go to sleep early on Christmas Eve! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, ${childName}, and Merry Christmas! Ho ho ho!`, () => {
+          currentTurn = 5;
+          setTimeout(endCall, 2000);
         });
       }
     }

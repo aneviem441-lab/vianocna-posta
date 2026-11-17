@@ -29,6 +29,16 @@
       user-select: none;
       -webkit-touch-callout: none;
     }
+    input, select, textarea, button {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
     img {
       -webkit-user-drag: none;
       user-drag: none;
@@ -489,15 +499,11 @@
     }
 
     // Real Santa Audio Clip from Official North Pole Recording (Standard MP3 - 100% Mobile Compatible)
-    const realSantaAudio = new Audio('/santa/assets/santa-ho-ho-ho.mp3');
-    realSantaAudio.preload = 'auto';
-
-    // Voice preview with authentic Santa sound effect
     const audioPreviewBtn = document.getElementById('playAudioPreview');
     let isPreviewPlaying = false;
+    let previewAudio = null;
 
-    function handleAudioPreview(e) {
-      if (e) e.preventDefault();
+    function handleAudioPreview() {
       if (isPreviewPlaying) return;
       isPreviewPlaying = true;
       audioPreviewBtn.textContent = '🔊 Santa is speaking...';
@@ -510,32 +516,26 @@
         audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
       }
 
-      realSantaAudio.currentTime = 0;
-      realSantaAudio.play().then(() => {
-        realSantaAudio.onended = resetBtn;
-        setTimeout(resetBtn, 4500);
-      }).catch(() => {
-        // Fallback in case of browser gesture policy
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utt = new SpeechSynthesisUtterance("HO! HO! HO! Merry Christmas!");
-          utt.rate = 0.82;
-          utt.pitch = 0.65;
-          utt.lang = 'en-US';
-          const v = getSantaVoice();
-          if (v) utt.voice = v;
-          utt.onend = resetBtn;
-          utt.onerror = resetBtn;
-          window.speechSynthesis.speak(utt);
-          setTimeout(resetBtn, 4000);
-        } else {
+      if (!previewAudio) {
+        previewAudio = new Audio('/santa/assets/santa-ho-ho-ho.mp3');
+      }
+      previewAudio.currentTime = 0;
+
+      const playPromise = previewAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          previewAudio.onended = resetBtn;
+          setTimeout(resetBtn, 4500);
+        }).catch(err => {
+          // If browser policy blocked playback, reset button
           resetBtn();
-        }
-      });
+        });
+      } else {
+        setTimeout(resetBtn, 4500);
+      }
     }
 
     audioPreviewBtn.addEventListener('click', handleAudioPreview);
-    audioPreviewBtn.addEventListener('touchend', handleAudioPreview);
 
     // Modal controls
     const modal = document.getElementById('paypalModal');

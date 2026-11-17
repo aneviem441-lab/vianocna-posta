@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import { dirname, join, resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PayPalAdapter } from './adapters/paypalAdapter.js';
@@ -166,9 +167,42 @@ export function createApp(options = {}) {
                       : ext === '.webm'
                         ? 'audio/webm'
                         : 'application/octet-stream';
-            const fileData = await readFile(safeFile);
-            res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'public, max-age=86400' });
-            res.end(fileData);
+
+            const fileStat = await stat(safeFile);
+            const totalSize = fileStat.size;
+            const rangeHeader = req.headers['range'];
+
+            // Handle HTTP Range requests (crucial for iOS Safari and mobile media playback)
+            if (rangeHeader && (ext === '.mp3' || ext === '.m4a' || ext === '.webm' || ext === '.mp4')) {
+              const parts = rangeHeader.replace(/bytes=/, '').split('-');
+              const start = parseInt(parts[0], 10);
+              const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+              if (start >= totalSize || end >= totalSize || start > end) {
+                res.writeHead(416, { 'Content-Range': `bytes */${totalSize}` });
+                res.end();
+                return;
+              }
+
+              const chunkSize = end - start + 1;
+              res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': mime,
+                'Cache-Control': 'public, max-age=86400'
+              });
+              createReadStream(safeFile, { start, end }).pipe(res);
+              return;
+            }
+
+            res.writeHead(200, {
+              'Content-Type': mime,
+              'Content-Length': totalSize,
+              'Accept-Ranges': 'bytes',
+              'Cache-Control': 'public, max-age=86400'
+            });
+            createReadStream(safeFile).pipe(res);
             return;
           } catch {
             sendJson(res, 404, { error: 'Asset not found', code: 'ASSET_NOT_FOUND' });
