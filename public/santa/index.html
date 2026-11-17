@@ -332,22 +332,24 @@
           <div class="plan-card active" data-plan="single" data-price="4.99">
             <div class="plan-title">🎄 Single Call Pass</div>
             <div class="plan-price">$4.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
-            <div class="plan-desc">Full 2-minute live voice call with Santa + Printable Nice List Certificate for 1 child.</div>
+            <div class="plan-desc">Full 2-minute live personalized voice call with Santa Claus for 1 child.</div>
+          </div>
+          <div class="plan-card" data-plan="bundle" data-price="5.99">
+            <div class="plan-badge">Most Popular · Save $1.00</div>
+            <div class="plan-title">⭐ Call + Official Diploma</div>
+            <div class="plan-price">$5.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
+            <div class="plan-desc">Full live call + Official North Pole Nice List Diploma included (high-res printable download).</div>
           </div>
           <div class="plan-card" data-plan="sibling" data-price="8.99">
-            <div class="plan-badge">Save 10% · Best for Families</div>
+            <div class="plan-badge">Family Pack</div>
             <div class="plan-title">🎅 Sibling 2-Call Bundle</div>
             <div class="plan-price">$8.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
-            <div class="plan-desc">2 separate full calls for siblings or friends + 2 unique personalized certificates.</div>
+            <div class="plan-desc">2 separate full calls for siblings or friends + 2 Official Signed Diplomas included.</div>
           </div>
         </div>
 
         <button type="submit" class="btn-main" id="startCallBtn">
           🎅 Start Live Call With Santa ($4.99)
-        </button>
-
-        <button type="button" class="btn-test" id="tryFreeTestBtn">
-          🧪 Try Instant 30-Second Test Call (Free Preview)
         </button>
       </form>
     </section>
@@ -523,15 +525,6 @@
       });
     });
 
-    // Free test call button
-    document.getElementById('tryFreeTestBtn').addEventListener('click', () => {
-      const name = document.getElementById('childName').value.trim() || 'My Child';
-      const topic = document.getElementById('praiseTopic').value;
-      const age = document.getElementById('childAge').value || '5';
-      const url = `/santa/call?mode=preview&name=${encodeURIComponent(name)}&topic=${encodeURIComponent(topic)}&age=${encodeURIComponent(age)}`;
-      window.location.href = url;
-    });
-
     // Modal controls
     const modal = document.getElementById('paypalModal');
     document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
@@ -599,13 +592,14 @@
                 currency: 'USD',
                 payerEmail: details.payer?.email_address || currentCallData.email,
                 status: 'COMPLETED',
-                raw: { orderId: data.orderID, captureId: details.id, childName: currentCallData.name }
+                raw: { orderId: data.orderID, captureId: details.id, childName: currentCallData.name, plan: currentCallData.plan }
               })
             }).catch(() => {});
 
             // Redirect to live call with verified ticket
             const ticket = details.id || `TKT-${Date.now()}`;
-            const targetUrl = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(currentCallData.name)}&topic=${encodeURIComponent(currentCallData.topic)}&age=${encodeURIComponent(currentCallData.age)}`;
+            const hasCert = (currentCallData.plan === 'bundle' || currentCallData.plan === 'sibling') ? '1' : '0';
+            const targetUrl = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(currentCallData.name)}&topic=${encodeURIComponent(currentCallData.topic)}&age=${encodeURIComponent(currentCallData.age)}&plan=${encodeURIComponent(currentCallData.plan)}&cert=${hasCert}`;
             window.location.href = targetUrl;
           });
         },

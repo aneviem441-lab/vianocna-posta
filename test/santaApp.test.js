@@ -14,6 +14,7 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     assert.ok(htmlHome.includes("Santa's Direct North Pole Hotline"));
     assert.ok(htmlHome.includes("snowCanvas"));
     assert.ok(htmlHome.includes("playAudioPreview"));
+    assert.ok(!htmlHome.includes("tryFreeTestBtn")); // 0 free access
     assert.ok(htmlHome.includes("DH auto s.r.o."));
 
     const resCall = await fetch(`http://127.0.0.1:${port}/santa/call`);
@@ -21,6 +22,7 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     const htmlCall = await resCall.text();
     assert.ok(htmlCall.includes("Live Call with Santa Claus"));
     assert.ok(htmlCall.includes("Download Official Certificate (PNG)"));
+    assert.ok(htmlCall.includes("Unlock Official Printable Diploma"));
     assert.ok(htmlCall.includes("North Pole Nice List"));
     assert.ok(htmlCall.includes("getSantaVoice"));
 

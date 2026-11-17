@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Great+Vibes&family=Inter:wght@400;600;700;800&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card"></script>
   <style>
     :root {
       --bg: #060c1c;
@@ -231,8 +232,19 @@
         <canvas id="certCanvas" width="1200" height="850"></canvas>
       </div>
 
+      <!-- Unlock Diploma Box ($1.00 USD) -->
+      <div id="unlockDiplomaBox" style="display:none;background:rgba(245,196,81,0.08);border:2px solid var(--gold);border-radius:14px;padding:18px;max-width:520px;width:100%;margin:14px auto;text-align:center;">
+        <h3 style="color:var(--gold);font-family:'Cinzel',serif;font-size:18px;margin-bottom:6px;">
+          📜 Unlock Official Printable Diploma ($1.00 USD)
+        </h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">
+          Get the high-resolution, watermark-free Official North Pole Diploma signed by Santa Claus to print and frame!
+        </p>
+        <div id="diploma-paypal-container" style="max-width:320px;margin:0 auto;min-height:50px;"></div>
+      </div>
+
       <div class="cert-actions">
-        <button type="button" class="btn-download" id="downloadCertBtn">
+        <button type="button" class="btn-download" id="downloadCertBtn" style="display:none;">
           📥 Download Official Certificate (PNG)
         </button>
         <button type="button" class="btn-share" id="shareWhatsappBtn">
@@ -314,10 +326,19 @@
     }
 
     const params = new URLSearchParams(window.location.search);
+    const hasTicket = params.get('ticket');
+    const isOwnerDemo = params.get('demo') === '1' || hasTicket === 'VIP-OWNER-TEST';
+
+    // Gatekeeper: Require paid pass or owner demo
+    if (!hasTicket && !isOwnerDemo) {
+      alert("Access Restricted: Please complete your booking to call Santa Claus!");
+      window.location.href = '/santa#booking';
+    }
+
     const childName = params.get('name') || 'Little Star';
     const childAge = params.get('age') || '';
     const topic = params.get('topic') || 'good_behavior';
-    const isPreview = params.get('mode') === 'preview';
+    let isCertUnlocked = params.get('cert') === '1' || params.get('plan') === 'bundle' || params.get('plan') === 'sibling' || isOwnerDemo;
 
     const ringingScreen = document.getElementById('ringingScreen');
     const activeScreen = document.getElementById('activeScreen');
@@ -346,7 +367,7 @@
     ];
 
     let currentTurn = 0;
-    let timerSeconds = isPreview ? 35 : 120;
+    let timerSeconds = 120; // Full 2-minute call! No free preview.
     let timerInterval = null;
 
     // Santa Voice Selection (excludes female and thin robotic profiles)
@@ -500,6 +521,73 @@
       document.getElementById('certChildName').textContent = childName;
 
       renderCertificate();
+      updateDiplomaUI();
+    }
+
+    function updateDiplomaUI() {
+      const downloadBtn = document.getElementById('downloadCertBtn');
+      const unlockBox = document.getElementById('unlockDiplomaBox');
+
+      if (isCertUnlocked) {
+        if (downloadBtn) downloadBtn.style.display = 'inline-flex';
+        if (unlockBox) unlockBox.style.display = 'none';
+      } else {
+        if (downloadBtn) downloadBtn.style.display = 'none';
+        if (unlockBox) unlockBox.style.display = 'block';
+        renderDiplomaPayPal();
+      }
+    }
+
+    let diplomaPpRendered = false;
+    function renderDiplomaPayPal() {
+      if (diplomaPpRendered) return;
+      const container = document.getElementById('diploma-paypal-container');
+      if (!container || !window.paypal) return;
+      diplomaPpRendered = true;
+
+      window.paypal.Buttons({
+        style: { layout: 'horizontal', color: 'gold', shape: 'pill', label: 'paypal', height: 44 },
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: `Official North Pole Diploma for ${childName}`,
+              amount: { currency_code: 'USD', value: '1.00' }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            fetch('/api/webhooks/paypal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: details.id,
+                event_type: 'PAYMENT.CAPTURE.COMPLETED',
+                summary: `Diploma Unlock ($1.00) - ${childName}`,
+                amount: 1.00,
+                currency: 'USD',
+                payerEmail: details.payer?.email_address,
+                status: 'COMPLETED',
+                raw: { orderId: data.orderID, captureId: details.id, childName: childName, item: 'diploma' }
+              })
+            }).catch(() => {});
+
+            isCertUnlocked = true;
+            renderCertificate();
+            updateDiplomaUI();
+
+            // Auto-download unlocked certificate
+            const c = document.getElementById('certCanvas');
+            const a = document.createElement('a');
+            a.download = `Santa-Nice-List-Diploma-${childName.replace(/\s+/g, '_')}.png`;
+            a.href = c.toDataURL('image/png');
+            a.click();
+          });
+        },
+        onError: function() {
+          alert("Payment could not be completed. Please try again.");
+        }
+      }).render('#diploma-paypal-container');
     }
 
     // Render Nice List Certificate onto Canvas
@@ -583,9 +671,17 @@
       g.fillStyle = '#64748b';
       g.fillText('SANTA CLAUS, NORTH POLE', 920, 715);
 
-      // Date
-      const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      g.fillText(`DATE: ${dateStr}`, c.width / 2, 770);
+      // Date or Watermark
+      if (!isCertUnlocked) {
+        g.fillStyle = 'rgba(196, 30, 58, 0.12)';
+        g.fillRect(60, 740, c.width - 120, 46);
+        g.fillStyle = '#c41e3a';
+        g.font = 'bold 19px "Cinzel", serif';
+        g.fillText('OFFICIAL DIPLOMA PREVIEW · UNLOCK FOR $1.00 USD TO PRINT', c.width / 2, 770);
+      } else {
+        const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        g.fillText(`DATE: ${dateStr}`, c.width / 2, 770);
+      }
     }
 
     // Download Certificate
