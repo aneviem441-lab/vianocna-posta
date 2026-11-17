@@ -128,6 +128,26 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && path.startsWith('/santa/js/')) {
+        const fileName = decodeURIComponent(path.replace('/santa/js/', ''));
+        const safeFile = join(ROOT_DIR, 'public', 'santa', 'js', fileName);
+        if (resolve(safeFile).startsWith(join(ROOT_DIR, 'public', 'santa', 'js'))) {
+          try {
+            const fileData = await readFile(safeFile);
+            res.writeHead(200, {
+              'Content-Type': 'application/javascript; charset=utf-8',
+              'X-Content-Type-Options': 'nosniff',
+              'Cache-Control': 'public, max-age=3600'
+            });
+            res.end(fileData);
+            return;
+          } catch {
+            sendJson(res, 404, { error: 'Script not found', code: 'SCRIPT_NOT_FOUND' });
+            return;
+          }
+        }
+      }
+
       if (method === 'GET' && path.startsWith('/santa/assets/')) {
         const fileName = decodeURIComponent(path.replace('/santa/assets/', ''));
         const safeFile = join(ROOT_DIR, 'public', 'santa', 'assets', fileName);
