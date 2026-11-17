@@ -380,6 +380,8 @@
     function playSantaAudio(src, text, onFinished) {
       speechBubble.textContent = text;
       santaMouth.classList.add('talking');
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.textContent = '🎅 Santa is speaking...';
 
       let finished = false;
       function done() {
@@ -396,14 +398,51 @@
 
       const playPromise = santaVoicePlayer.play();
       if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          // If browser policy delays or blocks, ensure dialogue progresses safely
+        playPromise.catch(() => {
           setTimeout(done, 4000);
         });
       }
 
-      // Safety timeout: always advance dialogue even on silent mode or background tab
-      setTimeout(done, 14000);
+      // Safety timeout: advance dialogue if audio stalls
+      setTimeout(done, 15000);
+    }
+
+    // Interactive child listening mode (with fallback if child is shy or silent)
+    let activeSpeechRecognition = null;
+    let latestChildHeard = '';
+
+    function listenToChild(promptText, maxWaitMs, onDone) {
+      santaMouth.classList.remove('talking');
+      speechBubble.innerHTML = `🎙️ <em>${promptText}</em><br><span style="font-size:13px;color:var(--gold);margin-top:6px;display:inline-block;">(Santa is listening to you... speak into your microphone!)</span>`;
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.textContent = '👂 Santa is listening to you...';
+
+      latestChildHeard = '';
+      let timer = null;
+      let completed = false;
+
+      function finishListening() {
+        if (completed) return;
+        completed = true;
+        clearTimeout(timer);
+        if (latestChildHeard) {
+          speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold)">"${latestChildHeard}"</strong>`;
+          setTimeout(() => { onDone(latestChildHeard); }, 1400);
+        } else {
+          onDone('');
+        }
+      }
+
+      timer = setTimeout(finishListening, maxWaitMs);
+
+      // Store callback for speech recognition event
+      window._onChildSpoke = function(transcript) {
+        latestChildHeard = transcript;
+        speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold)">"${transcript}"</strong>`;
+        // Give 1.4s after speech before Santa responds
+        clearTimeout(timer);
+        timer = setTimeout(finishListening, 1400);
+      };
     }
 
     // Answer Call Handler (Single clean click for mobile touch and desktop)
@@ -426,8 +465,8 @@
 
       try { startHolidayMusic(); } catch(err) {}
       startCallTimer();
-      startDialogue();
       try { setupSpeechRecognition(); } catch(err) {}
+      startInteractiveCall();
     }
 
     if (answerBtn) {
@@ -451,46 +490,76 @@
       }, 1000);
     }
 
-    function startDialogue() {
-      if (currentTurn === 0) {
-        // Step 1: Authentic Ho Ho Ho from YouTube
-        playSantaAudio('/santa/assets/santa-ho-ho-ho.mp3', "🎅 HO HO HO! Merry Christmas!", () => {
-          // Step 2: Welcoming child warmly
-          playSantaAudio('/santa/assets/santa-turn0-welcome.mp3', `Well hello there, ${childName}! Merry Christmas! It is so wonderful to hear your cheerful voice all the way from the North Pole!`, () => {
-            currentTurn = 1;
-            if (timerSeconds > 10) setTimeout(startDialogue, 3500);
+    // Interactive Santa Phone Call Sequence
+    function startInteractiveCall() {
+      // Step 0: YouTube Authentic Ho Ho Ho + Warm Santa Greeting
+      playSantaAudio('/santa/assets/santa-ho-ho-ho.mp3', "🎅 HO HO HO! Merry Christmas!", () => {
+        playSantaAudio('/santa/assets/santa-call-q0-greeting.mp3', `Ho ho ho! Well hello there, ${childName}! Merry Christmas! Santa Claus is so happy to hear your cheerful voice all the way from the North Pole!`, () => {
+          step1_listenAllYear();
+        });
+      });
+    }
+
+    // Step 1: Did you listen & behave all year? (User: "či posluchali celý rok")
+    function step1_listenAllYear() {
+      playSantaAudio('/santa/assets/santa-call-q1-listen-all-year.mp3', "Tell me, my dear friend, have you been good and listened to your parents all year long? Tell Santa, I am listening!", () => {
+        listenToChild("Have you been good and listened all year?", 6000, () => {
+          playSantaAudio('/santa/assets/santa-call-r1-listen-reaction.mp3', "Ho ho ho! That is music to my ears! The elves and Mrs. Claus always smile when children try their very best to be good and kind!", () => {
+            step2_gifts();
           });
         });
-      } else if (currentTurn === 1) {
-        // Turn 1: Praise topic from Santa's Golden Book
-        const praiseAudio = `/santa/assets/santa-turn1-${topicAudioKey}.mp3`;
-        playSantaAudio(praiseAudio, `I have my big Golden Book right here by my desk! ${topicPraise}`, () => {
-          currentTurn = 2;
-          if (timerSeconds > 10) setTimeout(startDialogue, 4000);
+      });
+    }
+
+    // Step 2: What presents/gifts do you want? (User: "a čo chcu dostat aké darčeky")
+    function step2_gifts() {
+      playSantaAudio('/santa/assets/santa-call-q2-gifts.mp3', "Now tell me, what special gifts or presents are you wishing to get for Christmas this year? Tell Santa all about them!", () => {
+        listenToChild("What gifts are you wishing to get for Christmas?", 6500, () => {
+          playSantaAudio('/santa/assets/santa-call-r2-gifts-reaction.mp3', "Ho ho ho! That sounds like a truly magical Christmas wish! My workshop elves are working extra hard right now making all the wonderful toys!", () => {
+            step3_festiveFood();
+          });
         });
-      } else if (currentTurn === 2) {
-        // Turn 2: Santa asks for Christmas wish & listens to child
-        playSantaAudio('/santa/assets/santa-turn2-wish.mp3', `Now tell me, ${childName}, what is the special wish you are hoping for this Christmas? I am listening!`, () => {
-          speechBubble.textContent = `🎙️ Santa is listening carefully to ${childName}... Speak to Santa now!`;
-          const micEl = document.getElementById('micStatus');
-          if (micEl) micEl.textContent = '👂 Santa is listening to you...';
-          currentTurn = 3;
-          // Give child 6 seconds of speaking time
-          setTimeout(startDialogue, 6500);
+      });
+    }
+
+    // Step 3: What do you like to eat at Christmas? (User: "a čo radi jedia na vianoce")
+    function step3_festiveFood() {
+      playSantaAudio('/santa/assets/santa-call-q3-festive-food.mp3', "And tell me, what is your favorite festive food or sweet treat to eat at Christmas time? Cookies, gingerbread, or a yummy holiday dinner?", () => {
+        listenToChild("What is your favorite festive food or sweet treat?", 6000, () => {
+          playSantaAudio('/santa/assets/santa-call-r3-food-reaction.mp3', "Mmm, that sounds absolutely delicious! Mrs. Claus and I love sweet Christmas treats too! And Rudolph the red-nosed reindeer always loves a crunchy carrot snack!", () => {
+            step4_loveMost();
+          });
         });
-      } else if (currentTurn === 3) {
-        // Turn 3: Santa reacts warmly to wish
-        playSantaAudio('/santa/assets/santa-turn3-workshop.mp3', `Ho ho ho! That sounds like a truly magical wish! The elves and reindeer are working extra hard in my workshop right now!`, () => {
-          currentTurn = 4;
-          if (timerSeconds > 10) setTimeout(startDialogue, 4000);
+      });
+    }
+
+    // Step 4: What do you love most about Christmas? (User: "a čo maju na vianociach najradsej")
+    function step4_loveMost() {
+      playSantaAudio('/santa/assets/santa-call-q4-love-most.mp3', "And tell me, my dear friend, what do you love the very most about Christmas time? The glistening snow, decorating the Christmas tree, or being with family?", () => {
+        listenToChild("What do you love most about Christmas time?", 6000, () => {
+          playSantaAudio('/santa/assets/santa-call-r4-love-reaction.mp3', "Ho ho ho! Being together with family, sharing warm hugs, and feeling the holiday love is truly the most magical part of Christmas in the whole world!", () => {
+            step5_songPoem();
+          });
         });
-      } else if (currentTurn === 4) {
-        // Turn 4: Final farewell and awarding nice list certificate
-        playSantaAudio('/santa/assets/santa-turn4-closing.mp3', `Remember to keep spreading kindness and go to sleep early on Christmas Eve! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, ${childName}, and Merry Christmas! Ho ho ho!`, () => {
-          currentTurn = 5;
-          setTimeout(endCall, 2000);
+      });
+    }
+
+    // Step 5: Christmas poem or song? (User: "či poznaju nejaku vianocnu basnicku a ze ci by mu kusok zaspievali")
+    function step5_songPoem() {
+      playSantaAudio('/santa/assets/santa-call-q5-song-poem.mp3', "Say, do you know a little Christmas poem, or could you sing Santa a little piece of a Christmas song? Like Jingle Bells? Santa would love to hear you sing or recite a little poem!", () => {
+        listenToChild("Sing a song or recite a Christmas poem for Santa!", 7500, () => {
+          playSantaAudio('/santa/assets/santa-call-r5-song-reaction.mp3', "Ho ho ho! Bravo! That was simply wonderful! That brought so much Christmas cheer all the way to the North Pole!", () => {
+            step6_farewellMilkCookie();
+          });
         });
-      }
+      });
+    }
+
+    // Step 6: Farewell, visit promise, and glass of milk & cookie on table! (User: "ze ich urcite pride tento rok navstivit a ze dufa ze si najde pohar mlieka a susienku na stole")
+    function step6_farewellMilkCookie() {
+      playSantaAudio('/santa/assets/santa-call-q6-farewell-milk-cookie.mp3', "You have been such a joy to speak with! I want to tell you a secret: I will definitely come visit your home this Christmas! Make sure to go to sleep early on Christmas Eve, and I really hope I will find a cold glass of milk and a yummy cookie on the table for old Santa! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, my dear friend, and Merry Christmas to you and your whole family! Ho ho ho!", () => {
+        setTimeout(endCall, 2000);
+      });
     }
 
     // Voice recognition to let child talk back (safely wrapped for mobile Safari)
@@ -498,20 +567,21 @@
       try {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRec) {
-          const rec = new SpeechRec();
-          rec.continuous = true;
-          rec.interimResults = false;
-          rec.lang = 'en-US';
+          activeSpeechRecognition = new SpeechRec();
+          activeSpeechRecognition.continuous = true;
+          activeSpeechRecognition.interimResults = false;
+          activeSpeechRecognition.lang = 'en-US';
 
-          rec.onresult = (e) => {
+          activeSpeechRecognition.onresult = (e) => {
             try {
               const transcript = e.results[e.results.length - 1][0].transcript;
-              const micEl = document.getElementById('micStatus');
-              if (micEl) micEl.textContent = `👂 Santa heard: "${transcript.slice(0, 30)}..."`;
+              if (transcript && typeof window._onChildSpoke === 'function') {
+                window._onChildSpoke(transcript.slice(0, 50));
+              }
             } catch(err) {}
           };
-          rec.onerror = () => {};
-          try { rec.start(); } catch(err) {}
+          activeSpeechRecognition.onerror = () => {};
+          try { activeSpeechRecognition.start(); } catch(err) {}
         }
       } catch(err) {}
     }

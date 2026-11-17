@@ -37,6 +37,11 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     assert.equal(resRange.status, 206);
     assert.equal(resRange.headers.get('content-range'), 'bytes 0-1/109130');
 
+    const resFarewell = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-call-q6-farewell-milk-cookie.mp3`);
+    assert.equal(resFarewell.status, 200);
+    assert.equal(resFarewell.headers.get('content-type'), 'audio/mpeg');
+    assert.equal(resFarewell.headers.get('accept-ranges'), 'bytes');
+
     const resM4a = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.m4a`);
     assert.equal(resM4a.status, 200);
     assert.equal(resM4a.headers.get('content-type'), 'audio/mp4');
