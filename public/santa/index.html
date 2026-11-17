@@ -32,7 +32,6 @@
     img {
       -webkit-user-drag: none;
       user-drag: none;
-      pointer-events: auto;
     }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -42,14 +41,6 @@
       overflow-x: hidden;
       background-image: radial-gradient(circle at 50% 0%, #1c2e56 0%, #070d1e 75%);
     }
-
-    .music-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(245, 196, 81, 0.15); border: 1px solid rgba(245, 196, 81, 0.4);
-      padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--gold);
-      cursor: pointer; transition: background 0.2s;
-    }
-    .music-pill:hover { background: rgba(245, 196, 81, 0.25); }
 
     /* Falling Snow effect */
     .snow-canvas {
@@ -267,13 +258,8 @@
       <a href="/santa" class="logo">
         🎅 Santa's Hotline
       </a>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <button type="button" id="toggleMusicBtn" class="music-pill">
-          🔔 Jingle Bells: <span id="musicStateText">Play Music</span>
-        </button>
-        <div class="badge-bar">
-          ⭐ #1 Live North Pole Experience in US & UK
-        </div>
+      <div class="badge-bar">
+        ⭐ #1 Live North Pole Experience in US & UK
       </div>
     </header>
 
@@ -413,7 +399,211 @@
   <!-- PayPal SDK script -->
   <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card"></script>
 
-  <!-- Obfuscated Protected North Pole Core & Landing Controller -->
-  <script src="/santa/js/landing.min.js"></script>
+  <script>
+    // Source Code Protection Shield
+    (function() {
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, { capture: true });
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123 || ((e.ctrlKey || e.metaKey) && (e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67) || e.keyCode === 85 || e.keyCode === 83))) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, { capture: true });
+      document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; }, { capture: true });
+      try {
+        const noop = function() {};
+        ['log', 'info', 'warn', 'debug', 'table'].forEach(function(m) { window.console[m] = noop; });
+      } catch(e) {}
+    })();
+
+    // Snow Animation
+    const canvas = document.getElementById('snowCanvas');
+    const ctx = canvas.getContext('2d');
+    let flakes = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 70; i++) {
+      flakes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 3 + 1,
+        d: Math.random() * 1.5 + 0.5
+      });
+    }
+
+    function drawSnow() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      for (const f of flakes) {
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+        f.y += f.d;
+        f.x += Math.sin(f.y / 30) * 0.4;
+        if (f.y > canvas.height) { f.y = 0; f.x = Math.random() * canvas.width; }
+      }
+      ctx.fill();
+      requestAnimationFrame(drawSnow);
+    }
+    drawSnow();
+
+    // Plan Selection
+    let selectedPrice = 4.99;
+    let selectedPlan = 'single';
+    document.querySelectorAll('.plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        selectedPrice = Number(card.getAttribute('data-price'));
+        selectedPlan = card.getAttribute('data-plan');
+        document.getElementById('startCallBtn').textContent = `🎅 Start Live Call With Santa ($${selectedPrice.toFixed(2)})`;
+      });
+    });
+
+    // Authentic Santa Voice Engine & Selection
+    function getSantaVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const isFemale = (v) => /female|zira|samantha|karen|victoria|susan|catherine|hazel|fiona|moira|siri female|siri voice 1/i.test(v.name + ' ' + (v.voiceURI || ''));
+      const males = voices.filter(v => v.lang.startsWith('en') && !isFemale(v));
+      const preferred = males.find(v => /google.*uk.*male|google.*english.*male/i.test(v.name)) ||
+                        males.find(v => /microsoft.*david|microsoft.*mark|guy/i.test(v.name)) ||
+                        males.find(v => /daniel|arthur|alex|oliver|george/i.test(v.name)) ||
+                        males.find(v => /male/i.test(v.name)) ||
+                        males[0] ||
+                        voices.find(v => !isFemale(v));
+      return preferred || null;
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
+    }
+
+    // Voice preview with "Ho Ho Ho!" and deep resonant baritone
+    const audioPreviewBtn = document.getElementById('playAudioPreview');
+    audioPreviewBtn.addEventListener('click', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        audioPreviewBtn.textContent = '🔊 Santa is speaking...';
+        const utt = new SpeechSynthesisUtterance("HO! HO! HO! Merry Christmas! Well hello there, little one! It's Santa Claus straight from my North Pole workshop!");
+        utt.rate = 0.82;
+        utt.pitch = 0.65;
+        utt.lang = 'en-US';
+
+        const chosenVoice = getSantaVoice();
+        if (chosenVoice) utt.voice = chosenVoice;
+
+        utt.onend = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
+        utt.onerror = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
+
+        setTimeout(() => {
+          window.speechSynthesis.speak(utt);
+        }, 60);
+      } else {
+        alert("Audio preview is ready on your device during the live call!");
+      }
+    });
+
+    // Free test call button
+    document.getElementById('tryFreeTestBtn').addEventListener('click', () => {
+      const name = document.getElementById('childName').value.trim() || 'My Child';
+      const topic = document.getElementById('praiseTopic').value;
+      const age = document.getElementById('childAge').value || '5';
+      const url = `/santa/call?mode=preview&name=${encodeURIComponent(name)}&topic=${encodeURIComponent(topic)}&age=${encodeURIComponent(age)}`;
+      window.location.href = url;
+    });
+
+    // Modal controls
+    const modal = document.getElementById('paypalModal');
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+
+    // Handle Form Submit
+    let currentCallData = {};
+    document.getElementById('callForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentCallData = {
+        name: document.getElementById('childName').value.trim(),
+        age: document.getElementById('childAge').value,
+        topic: document.getElementById('praiseTopic').value,
+        email: document.getElementById('parentEmail').value.trim(),
+        plan: selectedPlan,
+        price: selectedPrice
+      };
+
+      document.getElementById('modalChildName').textContent = currentCallData.name;
+      document.getElementById('modalAmount').textContent = `$${selectedPrice.toFixed(2)} USD`;
+      modal.classList.add('active');
+
+      renderPayPalButtons();
+    });
+
+    let ppButtonsRendered = false;
+    function renderPayPalButtons() {
+      if (ppButtonsRendered) return;
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+
+      if (!window.paypal) {
+        container.innerHTML = '<p style="color:#f87171;font-size:13px;text-align:center;">Payment system is initializing, please refresh the page.</p>';
+        return;
+      }
+
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'gold',
+          shape: 'pill',
+          label: 'paypal'
+        },
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: `Santa North Pole Live Call Pass for ${currentCallData.name}`,
+              amount: {
+                currency_code: 'USD',
+                value: selectedPrice.toFixed(2)
+              }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            // Forward payment event to server for ledger & monitoring
+            fetch('/api/webhooks/paypal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: details.id,
+                event_type: 'PAYMENT.CAPTURE.COMPLETED',
+                summary: `Santa Live Call Pass - ${currentCallData.name}`,
+                amount: selectedPrice,
+                currency: 'USD',
+                payerEmail: details.payer?.email_address || currentCallData.email,
+                status: 'COMPLETED',
+                raw: { orderId: data.orderID, captureId: details.id, childName: currentCallData.name }
+              })
+            }).catch(() => {});
+
+            // Redirect to live call with verified ticket
+            const ticket = details.id || `TKT-${Date.now()}`;
+            const targetUrl = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(currentCallData.name)}&topic=${encodeURIComponent(currentCallData.topic)}&age=${encodeURIComponent(currentCallData.age)}`;
+            window.location.href = targetUrl;
+          });
+        },
+        onError: function(err) {
+          alert("Payment could not be completed. Please try again.");
+        }
+      }).render('#paypal-button-container');
+
+      ppButtonsRendered = true;
+    }
+  </script>
 </body>
 </html>

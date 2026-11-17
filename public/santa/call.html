@@ -28,7 +28,6 @@
     img {
       -webkit-user-drag: none;
       user-drag: none;
-      pointer-events: auto;
     }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -199,9 +198,6 @@
 
         <div class="call-bar-top">
           <span>🎄 North Pole Live Feed</span>
-          <button type="button" id="toggleCallMusicBtn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(245,196,81,0.5);border-radius:12px;color:#f5c451;font-size:11px;font-weight:700;padding:3px 10px;cursor:pointer;">
-            🔔 Jingle Bells: <span id="callMusicStatus">ON</span>
-          </button>
           <span class="timer" id="callTimer">02:00</span>
         </div>
 
@@ -249,7 +245,339 @@
     </div>
   </div>
 
-  <!-- Obfuscated Protected Live Call Controller -->
-  <script src="/santa/js/call.min.js"></script>
+  <script>
+    // Source Code Protection Shield
+    (function() {
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, { capture: true });
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123 || ((e.ctrlKey || e.metaKey) && (e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67) || e.keyCode === 85 || e.keyCode === 83))) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, { capture: true });
+      document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; }, { capture: true });
+      try {
+        const noop = function() {};
+        ['log', 'info', 'warn', 'debug', 'table'].forEach(function(m) { window.console[m] = noop; });
+      } catch(e) {}
+    })();
+
+    // Background Holiday Music (Jingle Bells Chimes)
+    let audioCtx = null;
+    let bgMusicPlaying = false;
+    function startHolidayMusic() {
+      try {
+        if (bgMusicPlaying) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        audioCtx = new AudioContext();
+        bgMusicPlaying = true;
+
+        const NOTES = { 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99 };
+        const SCORE = [
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'G5', d: 0.28 }, { n: 'C5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 1.1 },
+          { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 },
+          { n: 'F5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.58 }, { n: 'G5', d: 0.58 }
+        ];
+
+        function playLoop() {
+          if (!bgMusicPlaying || !audioCtx) return;
+          let t = audioCtx.currentTime + 0.1;
+          SCORE.forEach(item => {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(NOTES[item.n], t);
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.045, t + 0.03); // very gentle background level
+            g.gain.exponentialRampToValueAtTime(0.0001, t + item.d * 0.9);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + item.d);
+            t += item.d;
+          });
+          setTimeout(playLoop, (t - audioCtx.currentTime) * 1000 + 1500);
+        }
+        playLoop();
+      } catch(e) {}
+    }
+
+    function stopHolidayMusic() {
+      bgMusicPlaying = false;
+      if (audioCtx) {
+        try { audioCtx.close(); } catch(e) {}
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const childName = params.get('name') || 'Little Star';
+    const childAge = params.get('age') || '';
+    const topic = params.get('topic') || 'good_behavior';
+    const isPreview = params.get('mode') === 'preview';
+
+    const ringingScreen = document.getElementById('ringingScreen');
+    const activeScreen = document.getElementById('activeScreen');
+    const certificateScreen = document.getElementById('certificateScreen');
+    const speechBubble = document.getElementById('speechBubble');
+    const santaMouth = document.getElementById('santaMouth');
+    const callTimer = document.getElementById('callTimer');
+    const goldenToast = document.getElementById('goldenToast');
+    const goldenName = document.getElementById('goldenName');
+
+    goldenName.textContent = childName;
+
+    // Dialogue sequence in English tailored for child and topic
+    let topicPraise = "You have been so kind, sharing with everyone and being so good this year!";
+    if (topic === 'school_grades') topicPraise = "The elves told me how hard you worked at school and how proud your family is!";
+    if (topic === 'tidy_room') topicPraise = "I heard you have been keeping your room so tidy and helping out so wonderfully!";
+    if (topic === 'healthy_eating') topicPraise = "Mrs. Claus told me you have been eating all your healthy meals to grow big and strong!";
+    if (topic === 'christmas_wish') topicPraise = "The elves in my workshop are getting all the toys ready for Christmas!";
+
+    const dialogueTurns = [
+      `Ho ho ho! Well hello there, ${childName}! Merry Christmas! It is so wonderful to hear your cheerful voice all the way from the North Pole!`,
+      `I have my big Golden Book right here by my desk! ${topicPraise}`,
+      `Tell me, ${childName}, what is the special wish you are hoping for this Christmas? I am listening!`,
+      `Ho ho ho! That sounds like a truly magical wish! The elves and reindeer are working extra hard in the workshop right now!`,
+      `Remember to keep spreading kindness and go to sleep early on Christmas Eve! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, ${childName}, and Merry Christmas!`
+    ];
+
+    let currentTurn = 0;
+    let timerSeconds = isPreview ? 35 : 120;
+    let timerInterval = null;
+
+    // Santa Voice Selection (excludes female and thin robotic profiles)
+    function getSantaVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const isFemale = (v) => /female|zira|samantha|karen|victoria|susan|catherine|hazel|fiona|moira|siri female|siri voice 1/i.test(v.name + ' ' + (v.voiceURI || ''));
+      const males = voices.filter(v => v.lang.startsWith('en') && !isFemale(v));
+      const preferred = males.find(v => /google.*uk.*male|google.*english.*male/i.test(v.name)) ||
+                        males.find(v => /microsoft.*david|microsoft.*mark|guy/i.test(v.name)) ||
+                        males.find(v => /daniel|arthur|alex|oliver|george/i.test(v.name)) ||
+                        males.find(v => /male/i.test(v.name)) ||
+                        males[0] ||
+                        voices.find(v => !isFemale(v));
+      return preferred || null;
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
+    }
+
+    document.getElementById('answerBtn').addEventListener('click', () => {
+      ringingScreen.style.display = 'none';
+      activeScreen.classList.add('active');
+
+      startHolidayMusic();
+      startCallTimer();
+      startDialogue();
+      setupSpeechRecognition();
+    });
+
+    function startCallTimer() {
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        const m = Math.floor(timerSeconds / 60);
+        const s = timerSeconds % 60;
+        callTimer.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+
+        if (timerSeconds === 90) {
+          goldenToast.style.display = 'inline-flex';
+        }
+
+        if (timerSeconds <= 0) {
+          endCall();
+        }
+      }, 1000);
+    }
+
+    function speakText(text, callback) {
+      speechBubble.textContent = text;
+      santaMouth.classList.add('talking');
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.rate = 0.82;
+        utt.pitch = 0.65;
+        utt.lang = 'en-US';
+
+        const chosen = getSantaVoice();
+        if (chosen) utt.voice = chosen;
+
+        utt.onend = () => {
+          santaMouth.classList.remove('talking');
+          if (callback) callback();
+        };
+        utt.onerror = () => {
+          santaMouth.classList.remove('talking');
+          if (callback) callback();
+        };
+
+        setTimeout(() => {
+          window.speechSynthesis.speak(utt);
+        }, 60);
+      } else {
+        setTimeout(() => {
+          santaMouth.classList.remove('talking');
+          if (callback) callback();
+        }, 4000);
+      }
+    }
+
+    function startDialogue() {
+      if (currentTurn < dialogueTurns.length) {
+        speakText(dialogueTurns[currentTurn], () => {
+          currentTurn++;
+          if (currentTurn < dialogueTurns.length && timerSeconds > 10) {
+            // Wait 5 seconds for child to respond, then continue
+            setTimeout(startDialogue, 5000);
+          } else if (currentTurn >= dialogueTurns.length) {
+            setTimeout(endCall, 3000);
+          }
+        });
+      }
+    }
+
+    // Voice recognition to let child talk back
+    function setupSpeechRecognition() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        const rec = new SpeechRec();
+        rec.continuous = true;
+        rec.interimResults = false;
+        rec.lang = 'en-US';
+
+        rec.onresult = (e) => {
+          const transcript = e.results[e.results.length - 1][0].transcript;
+          document.getElementById('micStatus').textContent = `👂 Santa heard: "${transcript.slice(0, 30)}..."`;
+        };
+        rec.start();
+      }
+    }
+
+    document.getElementById('endCallBtn').addEventListener('click', endCall);
+
+    function endCall() {
+      clearInterval(timerInterval);
+      stopHolidayMusic();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      activeScreen.classList.remove('active');
+      certificateScreen.classList.add('active');
+      document.getElementById('certChildName').textContent = childName;
+
+      renderCertificate();
+    }
+
+    // Render Nice List Certificate onto Canvas
+    function renderCertificate() {
+      const c = document.getElementById('certCanvas');
+      const g = c.getContext('2d');
+
+      // Parchment gradient background
+      const bgGrad = g.createLinearGradient(0, 0, c.width, c.height);
+      bgGrad.addColorStop(0, '#fffbf0');
+      bgGrad.addColorStop(1, '#fdeece');
+      g.fillStyle = bgGrad;
+      g.fillRect(0, 0, c.width, c.height);
+
+      // Gold & Burgundy ornate borders
+      g.strokeStyle = '#c41e3a';
+      g.lineWidth = 14;
+      g.strokeRect(30, 30, c.width - 60, c.height - 60);
+
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 4;
+      g.strokeRect(46, 46, c.width - 92, c.height - 92);
+
+      // Header
+      g.textAlign = 'center';
+      g.fillStyle = '#1e293b';
+      g.font = '700 32px "Cinzel", serif';
+      g.fillText('NORTH POLE HEADQUARTERS · OFFICIAL DIPLOMA', c.width / 2, 120);
+
+      g.fillStyle = '#c41e3a';
+      g.font = '900 64px "Cinzel", serif';
+      g.fillText('OFFICIAL NICE LIST CERTIFICATE', c.width / 2, 200);
+
+      // Subhead
+      g.fillStyle = '#334155';
+      g.font = 'italic 28px "Georgia", serif';
+      g.fillText('This is to certify that Santa Claus and the Elves have proudly placed', c.width / 2, 275);
+
+      // Child Name in Calligraphy
+      g.fillStyle = '#c41e3a';
+      g.font = 'bold 84px "Great Vibes", cursive';
+      g.fillText(childName, c.width / 2, 385);
+
+      // Decorative Line
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(350, 420);
+      g.lineTo(850, 420);
+      g.stroke();
+
+      // Body description
+      g.fillStyle = '#1e293b';
+      g.font = '500 28px "Inter", sans-serif';
+      g.fillText('on Santa\'s Official Nice List for Christmas 2026', c.width / 2, 480);
+
+      g.font = '400 22px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('Having shown exceptional kindness, a joyful heart, and holiday spirit.', c.width / 2, 530);
+
+      // Golden Wax Seal circle
+      g.fillStyle = '#b8860b';
+      g.beginPath();
+      g.arc(280, 680, 60, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#f5c451';
+      g.lineWidth = 4;
+      g.stroke();
+
+      g.fillStyle = '#ffffff';
+      g.font = 'bold 15px "Cinzel", serif';
+      g.fillText('OFFICIAL', 280, 672);
+      g.fillText('SEAL', 280, 692);
+
+      // Signatures
+      g.fillStyle = '#0f172a';
+      g.font = 'bold 52px "Great Vibes", cursive';
+      g.fillText('Santa Claus', 920, 680);
+
+      g.font = '600 16px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('SANTA CLAUS, NORTH POLE', 920, 715);
+
+      // Date
+      const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      g.fillText(`DATE: ${dateStr}`, c.width / 2, 770);
+    }
+
+    // Download Certificate
+    document.getElementById('downloadCertBtn').addEventListener('click', () => {
+      const c = document.getElementById('certCanvas');
+      const a = document.createElement('a');
+      a.download = `Santa-Nice-List-Certificate-${childName.replace(/\s+/g, '_')}.png`;
+      a.href = c.toDataURL('image/png');
+      a.click();
+    });
+
+    // Share on WhatsApp
+    document.getElementById('shareWhatsappBtn').addEventListener('click', () => {
+      const shareText = `🎄 My child ${childName} just had a magical live video call with Santa Claus and received their Official Nice List Certificate! You can try it here: https://${window.location.host}/santa`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+    });
+
+    document.getElementById('callAgainBtn').addEventListener('click', () => {
+      window.location.href = '/santa';
+    });
+  </script>
 </body>
 </html>
