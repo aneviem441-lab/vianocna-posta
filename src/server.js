@@ -161,7 +161,11 @@ export function createApp(options = {}) {
                   ? 'image/jpeg'
                   : ext === '.mp3'
                     ? 'audio/mpeg'
-                    : 'application/octet-stream';
+                    : ext === '.m4a'
+                      ? 'audio/mp4'
+                      : ext === '.webm'
+                        ? 'audio/webm'
+                        : 'application/octet-stream';
             const fileData = await readFile(safeFile);
             res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'public, max-age=86400' });
             res.end(fileData);

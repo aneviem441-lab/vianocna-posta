@@ -486,29 +486,41 @@
       window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
     }
 
-    // Voice preview with "Ho Ho Ho!" and deep resonant baritone
+    // Real Santa Audio Clip from Official North Pole Recording (Sound effect)
+    const realSantaAudio = new Audio();
+    if (realSantaAudio.canPlayType('audio/mp4')) {
+      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.m4a';
+    } else {
+      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.webm';
+    }
+    realSantaAudio.preload = 'auto';
+
+    // Voice preview with authentic Santa sound effect
     const audioPreviewBtn = document.getElementById('playAudioPreview');
     audioPreviewBtn.addEventListener('click', () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        audioPreviewBtn.textContent = '🔊 Santa is speaking...';
-        const utt = new SpeechSynthesisUtterance("HO! HO! HO! Merry Christmas! Well hello there, little one! It's Santa Claus straight from my North Pole workshop!");
-        utt.rate = 0.82;
-        utt.pitch = 0.65;
-        utt.lang = 'en-US';
-
-        const chosenVoice = getSantaVoice();
-        if (chosenVoice) utt.voice = chosenVoice;
-
-        utt.onend = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
-        utt.onerror = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
-
-        setTimeout(() => {
+      audioPreviewBtn.textContent = '🔊 Santa is speaking...';
+      realSantaAudio.currentTime = 0;
+      realSantaAudio.play().then(() => {
+        realSantaAudio.onended = () => {
+          audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
+        };
+      }).catch(() => {
+        // Fallback in case of browser restriction
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utt = new SpeechSynthesisUtterance("HO! HO! HO! Merry Christmas!");
+          utt.rate = 0.82;
+          utt.pitch = 0.65;
+          utt.lang = 'en-US';
+          const v = getSantaVoice();
+          if (v) utt.voice = v;
+          utt.onend = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
+          utt.onerror = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
           window.speechSynthesis.speak(utt);
-        }, 60);
-      } else {
-        alert("Audio preview is ready on your device during the live call!");
-      }
+        } else {
+          audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
+        }
+      });
     });
 
     // Free test call button
