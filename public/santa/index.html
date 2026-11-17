@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Santa's Direct North Pole Hotline — Live Video & Voice Call with Santa Claus</title>
+  <meta name="description" content="Give your child a magical live conversation with Santa Claus direct from the North Pole. Instant personalized voice call, Santa's Golden Book & Official Nice List Certificate." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700;800&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070d1e;
+      --card: rgba(16, 26, 52, 0.85);
+      --card-border: #233560;
+      --gold: #f5c451;
+      --gold-dark: #b8860b;
+      --crimson: #c41e3a;
+      --crimson-hover: #dc2626;
+      --green: #15803d;
+      --text: #ffffff;
+      --muted: #cbd5e1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 0%, #1c2e56 0%, #070d1e 75%);
+    }
+
+    /* Falling Snow effect */
+    .snow-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 99;
+    }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; position: relative; z-index: 2; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-wrap: wrap; gap: 12px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Mountains of Christmas', cursive; font-size: 28px; color: var(--gold);
+      text-decoration: none;
+    }
+    .badge-bar {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(196, 30, 58, 0.25); border: 1px solid rgba(245, 196, 81, 0.4);
+      padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--gold);
+    }
+
+    /* Hero */
+    .hero {
+      display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 36px;
+      align-items: center; padding: 40px 0 30px;
+    }
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; text-align: center; }
+    }
+
+    .countdown {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 14px; border-radius: 20px; font-size: 13px; color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .countdown strong { color: var(--gold); }
+
+    h1 {
+      font-family: 'Cinzel', serif; font-size: clamp(30px, 4.2vw, 48px);
+      line-height: 1.15; font-weight: 900; color: #fff;
+      text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+      margin-bottom: 16px;
+    }
+    h1 span {
+      background: linear-gradient(135deg, #fce083 0%, #eab308 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .lead {
+      font-size: 17px; color: var(--muted); line-height: 1.6;
+      margin-bottom: 26px; max-width: 580px;
+    }
+    @media (max-width: 860px) { .lead { margin: 0 auto 26px; } }
+
+    /* Features Pills */
+    .pills {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;
+    }
+    @media (max-width: 860px) { .pills { justify-content: center; } }
+    .pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+      padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    }
+
+    /* Santa Visual Card */
+    .santa-card {
+      background: var(--card); border: 2px solid rgba(245, 196, 81, 0.35);
+      border-radius: 20px; padding: 22px; text-align: center;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px rgba(196, 30, 58, 0.2);
+      position: relative; overflow: hidden;
+    }
+    .santa-img-wrap {
+      width: 100%; max-width: 310px; height: 320px; margin: 0 auto 16px;
+      border-radius: 16px; overflow: hidden; position: relative;
+      border: 2px solid rgba(245, 196, 81, 0.4);
+      background: url('/santa/assets/north-pole-workshop.jpg') center/cover;
+    }
+    .santa-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; object-position: top center;
+      transition: transform 0.3s;
+    }
+    .live-status {
+      position: absolute; top: 12px; left: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px);
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+      box-shadow: 0 0 8px #22c55e; animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Order / Booking Form */
+    .order-box {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 26px; margin: 20px 0;
+      backdrop-filter: blur(12px);
+    }
+    .order-box h2 {
+      font-family: 'Cinzel', serif; font-size: 22px; color: var(--gold);
+      margin-bottom: 6px; text-align: center;
+    }
+    .order-box p.sub {
+      color: var(--muted); font-size: 13px; text-align: center; margin-bottom: 20px;
+    }
+
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;
+    }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+    input, select {
+      width: 100%; padding: 11px 13px; border-radius: 8px;
+      border: 1px solid var(--card-border); background: rgba(7, 13, 30, 0.85);
+      color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--gold); }
+
+    /* Pricing Plans */
+    .plans {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0;
+    }
+    @media (max-width: 580px) { .plans { grid-template-columns: 1fr; } }
+    .plan-card {
+      border: 2px solid var(--card-border); border-radius: 14px;
+      padding: 16px; background: rgba(255,255,255,0.02);
+      cursor: pointer; position: relative; transition: all 0.2s;
+    }
+    .plan-card.active {
+      border-color: var(--gold); background: rgba(245, 196, 81, 0.08);
+      box-shadow: 0 4px 20px rgba(245, 196, 81, 0.15);
+    }
+    .plan-badge {
+      position: absolute; top: -10px; right: 14px;
+      background: var(--crimson); color: #fff; font-size: 10px; font-weight: 800;
+      padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+    }
+    .plan-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .plan-price { font-size: 26px; font-weight: 900; color: var(--gold); margin: 4px 0; }
+    .plan-desc { font-size: 12px; color: var(--muted); }
+
+    /* CTA Buttons */
+    .btn-main {
+      width: 100%; padding: 16px 24px; border-radius: 12px;
+      background: linear-gradient(135deg, #c41e3a 0%, #dc2626 100%);
+      color: #fff; font-size: 17px; font-weight: 800; border: none; cursor: pointer;
+      box-shadow: 0 6px 25px rgba(220, 38, 38, 0.45);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-main:hover { transform: translateY(-2px); opacity: 0.95; }
+    .btn-main:active { transform: translateY(0); }
+
+    .btn-test {
+      width: 100%; padding: 12px 18px; border-radius: 10px;
+      background: rgba(255,255,255,0.06); color: var(--muted);
+      border: 1px solid var(--card-border); font-size: 13px; font-weight: 600;
+      cursor: pointer; margin-top: 10px; transition: background 0.2s;
+    }
+    .btn-test:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    /* Steps Section */
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px; margin: 50px 0 30px;
+    }
+    .step {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 20px; text-align: center;
+    }
+    .step-num {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--crimson);
+      color: #fff; font-weight: 800; display: inline-flex; align-items: center;
+      justify-content: center; margin-bottom: 12px; font-size: 15px;
+    }
+    .step h3 { font-size: 16px; margin-bottom: 6px; color: var(--gold); }
+    .step p { font-size: 13px; color: var(--muted); }
+
+    /* PayPal Container Modal */
+    #paypalModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    #paypalModal.active { display: flex; }
+    .modal-card {
+      background: #0f172a; border: 2px solid var(--gold); border-radius: 18px;
+      max-width: 460px; width: 100%; padding: 26px; position: relative;
+    }
+    .close-modal {
+      position: absolute; top: 12px; right: 14px; font-size: 24px;
+      background: none; border: none; color: var(--muted); cursor: pointer;
+    }
+
+    footer {
+      text-align: center; padding: 30px 0; color: #64748b; font-size: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06); margin-top: 50px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <canvas class="snow-canvas" id="snowCanvas"></canvas>
+
+  <div class="wrap">
+    <header>
+      <a href="/santa" class="logo">
+        🎅 Santa's Hotline
+      </a>
+      <div class="badge-bar">
+        ⭐ #1 Live North Pole Experience in US & UK
+      </div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="countdown">
+          🎄 <strong>Live from North Pole</strong> · High-Speed Workshop Connection
+        </div>
+        <h1>Give Your Child a <span>Live Magical Call</span> with Santa!</h1>
+        <p class="lead">
+          Watch their eyes light up as Santa Claus speaks to them directly by name, listens to their Christmas wishes, and awards them an Official North Pole Nice List Certificate.
+        </p>
+
+        <div class="pills">
+          <div class="pill">🎙️ Real-Time 2-Way Voice</div>
+          <div class="pill">📜 Official Nice List Certificate</div>
+          <div class="pill">🔒 100% Kid Safe (No Camera Needed)</div>
+          <div class="pill">⚡ Instant Access (No App Download)</div>
+        </div>
+      </div>
+
+      <div class="santa-card">
+        <div class="santa-img-wrap">
+          <div class="live-status">
+            <span class="live-dot"></span> SANTA IS AT HIS DESK
+          </div>
+          <img src="/santa/assets/santa-cinematic.png" alt="Santa Claus Live" />
+        </div>
+        <button type="button" class="btn-test" id="playAudioPreview">
+          🔔 Hear Santa's Voice ("Ho Ho Ho!")
+        </button>
+      </div>
+    </section>
+
+    <!-- Booking / Customization Box -->
+    <section class="order-box" id="booking">
+      <h2>Step 1: Personalize Your Child's Call</h2>
+      <p class="sub">Tell Santa who he's speaking to so he can mention it during the call!</p>
+
+      <form id="callForm">
+        <div class="form-grid">
+          <div>
+            <label>Child's First Name *</label>
+            <input type="text" id="childName" placeholder="e.g. Liam, Emma, Oliver" required maxlength="30" />
+          </div>
+          <div>
+            <label>Child's Age (Optional)</label>
+            <input type="number" id="childAge" placeholder="e.g. 5" min="1" max="14" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label>What should Santa praise them for? *</label>
+            <select id="praiseTopic">
+              <option value="good_behavior">⭐ Being kind, sharing, and super well-behaved</option>
+              <option value="school_grades">📚 Great effort at school / kindergarten</option>
+              <option value="tidy_room">🧸 Tidying up toys and helping around the house</option>
+              <option value="healthy_eating">🥦 Eating good meals and being big and strong</option>
+              <option value="christmas_wish">🎁 Pure Christmas excitement & wish list</option>
+            </select>
+          </div>
+          <div>
+            <label>Your Email (for receipt & certificate backup) *</label>
+            <input type="email" id="parentEmail" placeholder="mom.or.dad@gmail.com" required />
+          </div>
+        </div>
+
+        <div class="plans">
+          <div class="plan-card active" data-plan="single" data-price="4.99">
+            <div class="plan-title">🎄 Single Call Pass</div>
+            <div class="plan-price">$4.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
+            <div class="plan-desc">Full 2-minute live voice call with Santa + Printable Nice List Certificate for 1 child.</div>
+          </div>
+          <div class="plan-card" data-plan="sibling" data-price="8.99">
+            <div class="plan-badge">Save 10% · Best for Families</div>
+            <div class="plan-title">🎅 Sibling 2-Call Bundle</div>
+            <div class="plan-price">$8.99 <span style="font-size:13px;font-weight:400;color:var(--muted)">USD</span></div>
+            <div class="plan-desc">2 separate full calls for siblings or friends + 2 unique personalized certificates.</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-main" id="startCallBtn">
+          🎅 Start Live Call With Santa ($4.99)
+        </button>
+
+        <button type="button" class="btn-test" id="tryFreeTestBtn">
+          🧪 Try Instant 30-Second Test Call (Free Preview)
+        </button>
+      </form>
+    </section>
+
+    <!-- How it works -->
+    <section class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Personalize in 10s</h3>
+        <p>Enter your child's name and what Santa should praise them for.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Instant Connection</h3>
+        <p>Santa's hotline rings right in your browser (no app to install!).</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Official Certificate</h3>
+        <p>After the call, instantly download the signed North Pole Nice List Certificate.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2026 DH auto s.r.o. All rights reserved. North Pole Live Hotline.</p>
+      <p style="margin-top:6px;">
+        <a href="/santa/terms">Parent Guidelines &amp; Privacy</a> · 
+        <a href="/santa/contact">Support</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- PayPal Payment Modal -->
+  <div id="paypalModal">
+    <div class="modal-card">
+      <button type="button" class="close-modal" id="closeModal">&times;</button>
+      <h3 style="font-family:'Cinzel',serif;color:var(--gold);margin-bottom:6px;">Complete Secure Checkout</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
+        Live Call Ticket for: <strong id="modalChildName" style="color:#fff">Child</strong> (<span id="modalAmount">$4.99 USD</span>)
+      </p>
+      
+      <div id="paypal-button-container" style="min-height: 120px;"></div>
+      <p style="text-align:center;font-size:11px;color:#64748b;margin-top:10px;">
+        🔒 256-bit Encrypted SSL · Supports Credit/Debit Cards, PayPal &amp; Apple Pay
+      </p>
+    </div>
+  </div>
+
+  <!-- PayPal SDK script -->
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card"></script>
+
+  <script>
+    // Snow Animation
+    const canvas = document.getElementById('snowCanvas');
+    const ctx = canvas.getContext('2d');
+    let flakes = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 70; i++) {
+      flakes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 3 + 1,
+        d: Math.random() * 1.5 + 0.5
+      });
+    }
+
+    function drawSnow() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      for (const f of flakes) {
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+        f.y += f.d;
+        f.x += Math.sin(f.y / 30) * 0.4;
+        if (f.y > canvas.height) { f.y = 0; f.x = Math.random() * canvas.width; }
+      }
+      ctx.fill();
+      requestAnimationFrame(drawSnow);
+    }
+    drawSnow();
+
+    // Plan Selection
+    let selectedPrice = 4.99;
+    let selectedPlan = 'single';
+    document.querySelectorAll('.plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        selectedPrice = Number(card.getAttribute('data-price'));
+        selectedPlan = card.getAttribute('data-plan');
+        document.getElementById('startCallBtn').textContent = `🎅 Start Live Call With Santa ($${selectedPrice.toFixed(2)})`;
+      });
+    });
+
+    // Voice preview
+    document.getElementById('playAudioPreview').addEventListener('click', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance("Ho ho ho! Merry Christmas! Well hello there, little one! It's Santa Claus straight from the North Pole!");
+        utt.rate = 0.88;
+        utt.pitch = 0.75; // deep warm Santa voice
+        utt.lang = 'en-US';
+        window.speechSynthesis.speak(utt);
+      } else {
+        alert("Audio preview is ready on your device during the live call!");
+      }
+    });
+
+    // Free test call button
+    document.getElementById('tryFreeTestBtn').addEventListener('click', () => {
+      const name = document.getElementById('childName').value.trim() || 'My Child';
+      const topic = document.getElementById('praiseTopic').value;
+      const age = document.getElementById('childAge').value || '5';
+      const url = `/santa/call?mode=preview&name=${encodeURIComponent(name)}&topic=${encodeURIComponent(topic)}&age=${encodeURIComponent(age)}`;
+      window.location.href = url;
+    });
+
+    // Modal controls
+    const modal = document.getElementById('paypalModal');
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+
+    // Handle Form Submit
+    let currentCallData = {};
+    document.getElementById('callForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentCallData = {
+        name: document.getElementById('childName').value.trim(),
+        age: document.getElementById('childAge').value,
+        topic: document.getElementById('praiseTopic').value,
+        email: document.getElementById('parentEmail').value.trim(),
+        plan: selectedPlan,
+        price: selectedPrice
+      };
+
+      document.getElementById('modalChildName').textContent = currentCallData.name;
+      document.getElementById('modalAmount').textContent = `$${selectedPrice.toFixed(2)} USD`;
+      modal.classList.add('active');
+
+      renderPayPalButtons();
+    });
+
+    let ppButtonsRendered = false;
+    function renderPayPalButtons() {
+      if (ppButtonsRendered) return;
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+
+      if (!window.paypal) {
+        container.innerHTML = '<p style="color:#f87171;font-size:13px;text-align:center;">Payment system is initializing, please refresh the page.</p>';
+        return;
+      }
+
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'gold',
+          shape: 'pill',
+          label: 'paypal'
+        },
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: `Santa North Pole Live Call Pass for ${currentCallData.name}`,
+              amount: {
+                currency_code: 'USD',
+                value: selectedPrice.toFixed(2)
+              }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            // Forward payment event to server for ledger & monitoring
+            fetch('/api/webhooks/paypal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: details.id,
+                event_type: 'PAYMENT.CAPTURE.COMPLETED',
+                summary: `Santa Live Call Pass - ${currentCallData.name}`,
+                amount: selectedPrice,
+                currency: 'USD',
+                payerEmail: details.payer?.email_address || currentCallData.email,
+                status: 'COMPLETED',
+                raw: { orderId: data.orderID, captureId: details.id, childName: currentCallData.name }
+              })
+            }).catch(() => {});
+
+            // Redirect to live call with verified ticket
+            const ticket = details.id || `TKT-${Date.now()}`;
+            const targetUrl = `/santa/call?ticket=${encodeURIComponent(ticket)}&name=${encodeURIComponent(currentCallData.name)}&topic=${encodeURIComponent(currentCallData.topic)}&age=${encodeURIComponent(currentCallData.age)}`;
+            window.location.href = targetUrl;
+          });
+        },
+        onError: function(err) {
+          alert("Payment could not be completed. Please try again.");
+        }
+      }).render('#paypal-button-container');
+
+      ppButtonsRendered = true;
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PayPalAdapter } from './adapters/paypalAdapter.js';
 import { SimulatorAdapter } from './adapters/simulatorAdapter.js';
@@ -112,6 +112,45 @@ export function createApp(options = {}) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
         return;
+      }
+
+      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'index.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      if (method === 'GET' && path.startsWith('/santa/assets/')) {
+        const fileName = decodeURIComponent(path.replace('/santa/assets/', ''));
+        const safeFile = join(ROOT_DIR, 'public', 'santa', 'assets', fileName);
+        if (resolve(safeFile).startsWith(join(ROOT_DIR, 'public', 'santa', 'assets'))) {
+          try {
+            const ext = extname(safeFile).toLowerCase();
+            const mime =
+              ext === '.png'
+                ? 'image/png'
+                : ext === '.jpg' || ext === '.jpeg'
+                  ? 'image/jpeg'
+                  : ext === '.mp3'
+                    ? 'audio/mpeg'
+                    : 'application/octet-stream';
+            const fileData = await readFile(safeFile);
+            res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'public, max-age=86400' });
+            res.end(fileData);
+            return;
+          } catch {
+            sendJson(res, 404, { error: 'Asset not found', code: 'ASSET_NOT_FOUND' });
+            return;
+          }
+        }
       }
 
       if (method === 'GET' && path === '/api/health') {
