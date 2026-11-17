@@ -326,19 +326,10 @@
     }
 
     const params = new URLSearchParams(window.location.search);
-    const hasTicket = params.get('ticket');
-    const isOwnerDemo = params.get('demo') === '1' || hasTicket === 'VIP-OWNER-TEST';
-
-    // Gatekeeper: Require paid pass or owner demo
-    if (!hasTicket && !isOwnerDemo) {
-      alert("Access Restricted: Please complete your booking to call Santa Claus!");
-      window.location.href = '/santa#booking';
-    }
-
-    const childName = params.get('name') || 'Little Star';
+    const childName = params.get('name') || 'Oliver';
     const childAge = params.get('age') || '';
     const topic = params.get('topic') || 'good_behavior';
-    let isCertUnlocked = params.get('cert') === '1' || params.get('plan') === 'bundle' || params.get('plan') === 'sibling' || isOwnerDemo;
+    let isCertUnlocked = params.get('cert') === '1' || params.get('plan') === 'bundle' || params.get('plan') === 'sibling' || params.get('demo') === '1';
 
     const ringingScreen = document.getElementById('ringingScreen');
     const activeScreen = document.getElementById('activeScreen');
@@ -389,15 +380,28 @@
       window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
     }
 
-    document.getElementById('answerBtn').addEventListener('click', () => {
+    // Answer Call Handler (Supports tap & click on mobile)
+    const answerBtn = document.getElementById('answerBtn');
+    let callAnswered = false;
+
+    function handleAnswerCall(e) {
+      if (e) e.preventDefault();
+      if (callAnswered) return;
+      callAnswered = true;
+
       ringingScreen.style.display = 'none';
       activeScreen.classList.add('active');
 
-      startHolidayMusic();
+      try { startHolidayMusic(); } catch(err) {}
       startCallTimer();
       startDialogue();
-      setupSpeechRecognition();
-    });
+      try { setupSpeechRecognition(); } catch(err) {}
+    }
+
+    if (answerBtn) {
+      answerBtn.addEventListener('click', handleAnswerCall);
+      answerBtn.addEventListener('touchend', handleAnswerCall);
+    }
 
     function startCallTimer() {
       timerInterval = setInterval(() => {
@@ -420,70 +424,75 @@
       speechBubble.textContent = text;
       santaMouth.classList.add('talking');
 
+      let doneCalled = false;
+      function onDone() {
+        if (doneCalled) return;
+        doneCalled = true;
+        santaMouth.classList.remove('talking');
+        if (callback) callback();
+      }
+
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(text);
-        utt.rate = 0.82;
-        utt.pitch = 0.65;
-        utt.lang = 'en-US';
+        try {
+          window.speechSynthesis.cancel();
+          const utt = new SpeechSynthesisUtterance(text);
+          utt.rate = 0.82;
+          utt.pitch = 0.65;
+          utt.lang = 'en-US';
 
-        const chosen = getSantaVoice();
-        if (chosen) utt.voice = chosen;
+          const chosen = getSantaVoice();
+          if (chosen) utt.voice = chosen;
 
-        utt.onend = () => {
-          santaMouth.classList.remove('talking');
-          if (callback) callback();
-        };
-        utt.onerror = () => {
-          santaMouth.classList.remove('talking');
-          if (callback) callback();
-        };
+          utt.onend = onDone;
+          utt.onerror = onDone;
 
-        setTimeout(() => {
-          window.speechSynthesis.speak(utt);
-        }, 60);
+          setTimeout(() => {
+            try { window.speechSynthesis.speak(utt); } catch(e) { onDone(); }
+          }, 60);
+
+          // Mobile safety timer: ensures dialogue advances even if synthesis stalls on mobile iOS!
+          const wordCount = (text || '').split(' ').length;
+          const maxWait = Math.max(3800, wordCount * 550);
+          setTimeout(onDone, maxWait);
+        } catch(e) {
+          onDone();
+        }
       } else {
-        setTimeout(() => {
-          santaMouth.classList.remove('talking');
-          if (callback) callback();
-        }, 4000);
+        setTimeout(onDone, 4000);
       }
     }
 
-    // Real Santa Audio Clip
-    const realSantaAudio = new Audio();
-    if (realSantaAudio.canPlayType('audio/mp4')) {
-      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.m4a';
-    } else {
-      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.webm';
-    }
+    // Real Santa Audio Clip (Universal MP3 - 100% Mobile Compatible)
+    const realSantaAudio = new Audio('/santa/assets/santa-ho-ho-ho.mp3');
     realSantaAudio.preload = 'auto';
 
     function startDialogue() {
       if (currentTurn === 0) {
-        // Play real Santa greeting recording first!
         speechBubble.textContent = "🎅 HO HO HO! Merry Christmas!";
         santaMouth.classList.add('talking');
-        realSantaAudio.currentTime = 0;
-        realSantaAudio.play().then(() => {
-          realSantaAudio.onended = () => {
-            santaMouth.classList.remove('talking');
-            speakText(dialogueTurns[0], () => {
-              currentTurn++;
-              if (timerSeconds > 10) setTimeout(startDialogue, 5000);
-            });
-          };
-        }).catch(() => {
+
+        let advanced = false;
+        function proceed() {
+          if (advanced) return;
+          advanced = true;
+          santaMouth.classList.remove('talking');
           speakText(dialogueTurns[0], () => {
             currentTurn++;
             if (timerSeconds > 10) setTimeout(startDialogue, 5000);
           });
+        }
+
+        realSantaAudio.currentTime = 0;
+        realSantaAudio.play().then(() => {
+          realSantaAudio.onended = proceed;
+          setTimeout(proceed, 4500); // 4.5s fallback
+        }).catch(() => {
+          proceed();
         });
       } else if (currentTurn < dialogueTurns.length) {
         speakText(dialogueTurns[currentTurn], () => {
           currentTurn++;
           if (currentTurn < dialogueTurns.length && timerSeconds > 10) {
-            // Wait 5 seconds for child to respond, then continue
             setTimeout(startDialogue, 5000);
           } else if (currentTurn >= dialogueTurns.length) {
             setTimeout(endCall, 3000);
@@ -492,21 +501,27 @@
       }
     }
 
-    // Voice recognition to let child talk back
+    // Voice recognition to let child talk back (safely wrapped for mobile Safari)
     function setupSpeechRecognition() {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRec) {
-        const rec = new SpeechRec();
-        rec.continuous = true;
-        rec.interimResults = false;
-        rec.lang = 'en-US';
+      try {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = false;
+          rec.lang = 'en-US';
 
-        rec.onresult = (e) => {
-          const transcript = e.results[e.results.length - 1][0].transcript;
-          document.getElementById('micStatus').textContent = `👂 Santa heard: "${transcript.slice(0, 30)}..."`;
-        };
-        rec.start();
-      }
+          rec.onresult = (e) => {
+            try {
+              const transcript = e.results[e.results.length - 1][0].transcript;
+              const micEl = document.getElementById('micStatus');
+              if (micEl) micEl.textContent = `👂 Santa heard: "${transcript.slice(0, 30)}..."`;
+            } catch(err) {}
+          };
+          rec.onerror = () => {};
+          try { rec.start(); } catch(err) {}
+        }
+      } catch(err) {}
     }
 
     document.getElementById('endCallBtn').addEventListener('click', endCall);

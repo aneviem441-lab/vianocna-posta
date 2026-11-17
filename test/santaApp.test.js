@@ -26,6 +26,10 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     assert.ok(htmlCall.includes("North Pole Nice List"));
     assert.ok(htmlCall.includes("getSantaVoice"));
 
+    const resMp3 = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.mp3`);
+    assert.equal(resMp3.status, 200);
+    assert.equal(resMp3.headers.get('content-type'), 'audio/mpeg');
+
     const resM4a = await fetch(`http://127.0.0.1:${port}/santa/assets/santa-ho-ho-ho.m4a`);
     assert.equal(resM4a.status, 200);
     assert.equal(resM4a.headers.get('content-type'), 'audio/mp4');

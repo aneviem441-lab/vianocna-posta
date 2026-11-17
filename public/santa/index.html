@@ -488,26 +488,34 @@
       window.speechSynthesis.onvoiceschanged = () => { getSantaVoice(); };
     }
 
-    // Real Santa Audio Clip from Official North Pole Recording (Sound effect)
-    const realSantaAudio = new Audio();
-    if (realSantaAudio.canPlayType('audio/mp4')) {
-      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.m4a';
-    } else {
-      realSantaAudio.src = '/santa/assets/santa-ho-ho-ho.webm';
-    }
+    // Real Santa Audio Clip from Official North Pole Recording (Standard MP3 - 100% Mobile Compatible)
+    const realSantaAudio = new Audio('/santa/assets/santa-ho-ho-ho.mp3');
     realSantaAudio.preload = 'auto';
 
     // Voice preview with authentic Santa sound effect
     const audioPreviewBtn = document.getElementById('playAudioPreview');
-    audioPreviewBtn.addEventListener('click', () => {
+    let isPreviewPlaying = false;
+
+    function handleAudioPreview(e) {
+      if (e) e.preventDefault();
+      if (isPreviewPlaying) return;
+      isPreviewPlaying = true;
       audioPreviewBtn.textContent = '🔊 Santa is speaking...';
+
+      let ended = false;
+      function resetBtn() {
+        if (ended) return;
+        ended = true;
+        isPreviewPlaying = false;
+        audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
+      }
+
       realSantaAudio.currentTime = 0;
       realSantaAudio.play().then(() => {
-        realSantaAudio.onended = () => {
-          audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
-        };
+        realSantaAudio.onended = resetBtn;
+        setTimeout(resetBtn, 4500);
       }).catch(() => {
-        // Fallback in case of browser restriction
+        // Fallback in case of browser gesture policy
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
           const utt = new SpeechSynthesisUtterance("HO! HO! HO! Merry Christmas!");
@@ -516,14 +524,18 @@
           utt.lang = 'en-US';
           const v = getSantaVoice();
           if (v) utt.voice = v;
-          utt.onend = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
-          utt.onerror = () => { audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")'; };
+          utt.onend = resetBtn;
+          utt.onerror = resetBtn;
           window.speechSynthesis.speak(utt);
+          setTimeout(resetBtn, 4000);
         } else {
-          audioPreviewBtn.textContent = '🔔 Hear Santa\'s Voice ("Ho Ho Ho!")';
+          resetBtn();
         }
       });
-    });
+    }
+
+    audioPreviewBtn.addEventListener('click', handleAudioPreview);
+    audioPreviewBtn.addEventListener('touchend', handleAudioPreview);
 
     // Modal controls
     const modal = document.getElementById('paypalModal');
