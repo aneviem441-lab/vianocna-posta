@@ -230,4 +230,45 @@ export class PayPalAdapter {
       processorRaw: { status: 'VOIDED' }
     };
   }
+
+  /**
+   * Fetches full order details by PayPal order ID.
+   */
+  async getOrder(orderId) {
+    const { data } = await this.#request('GET', `/v2/checkout/orders/${encodeURIComponent(orderId)}`);
+    return data;
+  }
+
+  /**
+   * Fetches authorization details by PayPal authorization ID.
+   */
+  async getAuthorization(authorizationId) {
+    const { data } = await this.#request('GET', `/v2/payments/authorizations/${encodeURIComponent(authorizationId)}`);
+    return data;
+  }
+
+  /**
+   * Fetches account transaction history via PayPal Reporting API (last 30 days by default).
+   */
+  async listTransactions({ startDate, endDate, pageSize = 20 } = {}) {
+    const end = endDate || new Date().toISOString();
+    const start =
+      startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const query = new URLSearchParams({
+      start_date: start,
+      end_date: end,
+      fields: 'all',
+      page_size: String(pageSize)
+    });
+    try {
+      const { data } = await this.#request('GET', `/v1/reporting/transactions?${query.toString()}`);
+      return data;
+    } catch (err) {
+      return {
+        error: err.message,
+        code: err.code || 'PAYPAL_REPORTING_UNAVAILABLE',
+        transaction_details: []
+      };
+    }
+  }
 }

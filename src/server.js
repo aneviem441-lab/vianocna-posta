@@ -12,6 +12,7 @@ import { PreAuthService } from './domain/preauthService.js';
 import { exportToCsv, exportToXml } from './export/erpExport.js';
 import { JsonLedgerStore } from './storage/jsonStore.js';
 import { LeadStore } from './storage/leadStore.js';
+import { PayPalStore } from './storage/paypalStore.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
@@ -53,6 +54,12 @@ export function createApp(options = {}) {
   const leadStore =
     options.leadStore ||
     new LeadStore(options.leadsPath !== undefined ? options.leadsPath : join(ROOT_DIR, 'data', 'leads.json'));
+
+  const paypalStore =
+    options.paypalStore ||
+    new PayPalStore(
+      options.paypalEventsPath !== undefined ? options.paypalEventsPath : join(ROOT_DIR, 'data', 'paypal_events.json')
+    );
 
   const paypalSandbox = new PayPalAdapter({
     clientId: config.paypalClientId,
@@ -232,6 +239,53 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && path === '/api/paypal/events') {
+        auth.authenticate(req, 'viewer');
+        const limit = Number(url.searchParams.get('limit') || 50);
+        const events = await paypalStore.list({ limit });
+        sendJson(res, 200, { events });
+        return;
+      }
+
+      if (method === 'POST' && path === '/api/webhooks/paypal') {
+        const body = await readJsonBody(req);
+        const event = await paypalStore.recordEvent(body);
+        sendJson(res, 200, { ok: true, eventId: event.id });
+        return;
+      }
+
+      if (method === 'GET' && path === '/api/paypal/transactions') {
+        auth.authenticate(req, 'viewer');
+        const activeAdapter = config.processorMode.startsWith('paypal')
+          ? adapters[config.processorMode]
+          : paypalLive.isConfigured()
+            ? paypalLive
+            : paypalSandbox;
+
+        if (!activeAdapter.isConfigured()) {
+          const events = await paypalStore.list({ limit: 50 });
+          sendJson(res, 200, {
+            configured: false,
+            message: 'PayPal credentials not set in local environment; returning stored events',
+            transactions: [],
+            events
+          });
+          return;
+        }
+
+        const startDate = url.searchParams.get('start_date') || undefined;
+        const endDate = url.searchParams.get('end_date') || undefined;
+        const result = await activeAdapter.listTransactions({ startDate, endDate });
+        const events = await paypalStore.list({ limit: 50 });
+        sendJson(res, 200, {
+          configured: true,
+          processor: activeAdapter.name,
+          paypalReport: result,
+          storedEvents: events
+        });
+        return;
+      }
+
       const actionMatch = path.match(/^\/api\/preauths\/([^/]+)\/(authorize|capture|reauthorize|void)$/);
       if (method === 'POST' && actionMatch) {
         const idOrCode = decodeURIComponent(actionMatch[1]);
@@ -260,7 +314,7 @@ export function createApp(options = {}) {
     }
   });
 
-  return { server, service, config, auth, leadStore };
+  return { server, service, config, auth, leadStore, paypalStore };
 }
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

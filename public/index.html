@@ -321,6 +321,32 @@
         </div>
       </div>
     </section>
+
+    <!-- PayPal Monitor Section -->
+    <section class="card" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <h2 style="margin:0;">💳 PayPal Live Monitor (Prijaté platby &amp; Kaucie)</h2>
+          <div class="sub">Autonómne sledovanie prichádzajúcich transakcií, autorizácií a webhook udalostí z PayPal</div>
+        </div>
+        <button type="button" class="sec" id="refreshPayPalBtn">Obnoviť PayPal</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Transakcie / Event</th>
+              <th>Typ udalosti</th>
+              <th>Suma</th>
+              <th>Platca / Odosielateľ</th>
+              <th>Dátum</th>
+              <th>Stav</th>
+            </tr>
+          </thead>
+          <tbody id="paypalBody"></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -671,10 +697,39 @@
       }
     });
 
+    async function refreshPayPalEvents() {
+      const tbody = document.getElementById('paypalBody');
+      if (!tbody) return;
+      try {
+        const { events } = await api('/api/paypal/events');
+        tbody.innerHTML = '';
+        if (!events || events.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="sub">Zatiaľ žiadne zaznamenané PayPal udalosti.</td></tr>';
+          return;
+        }
+        for (const ev of events) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code>${ev.id}</code><br><span class="sub">${ev.summary}</span></td>
+            <td><span class="badge ${ev.status}">${ev.eventType}</span></td>
+            <td><strong>${ev.amount !== null ? ev.amount.toFixed(2) + ' ' + ev.currency : '-'}</strong></td>
+            <td>${ev.payerEmail || '-'}</td>
+            <td>${new Date(ev.createdAt).toLocaleString('sk-SK')}</td>
+            <td><span class="badge ${ev.status}">${ev.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="sub error">${err.message}</td></tr>`;
+      }
+    }
+
+    document.getElementById('refreshPayPalBtn').addEventListener('click', refreshPayPalEvents);
     document.getElementById('refreshLeadsBtn').addEventListener('click', refreshLeads);
 
     refreshAll();
     refreshLeads();
+    refreshPayPalEvents();
   </script>
 </body>
 </html>
