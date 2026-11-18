@@ -176,6 +176,13 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (isGetOrHead && (path === '/launch-us' || path === '/launch-us.html' || path === '/launch' || path === '/promo')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'launch-us.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : html);
+        return;
+      }
+
       if (method === 'GET' && path.startsWith('/santa/js/')) {
         const fileName = decodeURIComponent(path.replace('/santa/js/', ''));
         const safeFile = join(ROOT_DIR, 'public', 'santa', 'js', fileName);
