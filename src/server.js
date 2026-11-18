@@ -115,7 +115,19 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html' || path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
+      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
+        const langHeader = (req.headers['accept-language'] || '').toLowerCase();
+        const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
+        const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
+
+        const fileToServe = isSlovakOrCzech ? 'sk.html' : 'index.html';
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      if (method === 'GET' && (path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
@@ -129,7 +141,19 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html' || path === '/us/call' || path === '/en/call')) {
+      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html')) {
+        const langHeader = (req.headers['accept-language'] || '').toLowerCase();
+        const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
+        const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
+
+        const fileToServe = isSlovakOrCzech ? 'call-sk.html' : 'call.html';
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      if (method === 'GET' && (path === '/us/call' || path === '/en/call')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
