@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /us
+Allow: /en
+Allow: /santa
+Allow: /sk
+Disallow: /api/
+
+Sitemap: https://preauth-terminal.onrender.com/sitemap.xml

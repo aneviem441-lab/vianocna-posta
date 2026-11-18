@@ -183,6 +183,20 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (isGetOrHead && path === '/robots.txt') {
+        const txt = await readFile(join(ROOT_DIR, 'public', 'robots.txt'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : txt);
+        return;
+      }
+
+      if (isGetOrHead && path === '/sitemap.xml') {
+        const xml = await readFile(join(ROOT_DIR, 'public', 'sitemap.xml'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : xml);
+        return;
+      }
+
       if (method === 'GET' && path.startsWith('/santa/js/')) {
         const fileName = decodeURIComponent(path.replace('/santa/js/', ''));
         const safeFile = join(ROOT_DIR, 'public', 'santa', 'js', fileName);
