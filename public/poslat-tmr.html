@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Odoslať ponuku do TMR — 1 Kliknutie</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #131a2e;
+      --gold: #f5c451;
+      --border: #263459;
+      --green: #15803d;
+      --green-hover: #16a34a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: #fff;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      max-width: 600px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 26px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    h1 {
+      font-size: 22px;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(245, 196, 81, 0.15);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      font-size: 17px;
+      font-weight: 800;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(21, 128, 61, 0.4);
+      transition: all 0.2s;
+    }
+    .btn:hover, .btn:active {
+      background: var(--green-hover);
+      transform: translateY(-2px);
+    }
+    .btn-alt {
+      background: #2563eb;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+    }
+    .preview-box {
+      margin-top: 24px;
+      text-align: left;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 12px;
+      color: #cbd5e1;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .info-list {
+      text-align: left;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.03);
+      padding: 12px 16px;
+      border-radius: 10px;
+    }
+    .info-list li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Tatry Mountain Resorts (TMR) · B2B Pilot</div>
+    <h1>✉️ Odoslať ponuku priamo z mobilu</h1>
+    <p>Kliknutím na tlačidlo nižšie sa ti priamo v telefóne otvorí Gmail s kompletne pripraveným e-mailom pre TMR. Stačí len ťuknúť na <strong>Odoslať (modrá šípka)</strong>!</p>
+
+    <div class="info-list">
+      <ul>
+        <li><strong>Príjemcovia:</strong> info@tmr.sk, b2b@tmr.sk, tatrymotion@tmr.sk</li>
+        <li><strong>Kópia (CC):</strong> workssro1@gmail.com (kópia do tvojho mobilu)</li>
+        <li><strong>Predmet:</strong> Online terminál na depozity a kaucie pre zimnú sezónu TMR</li>
+      </ul>
+    </div>
+
+    <!-- Tlačidlá pre mobil a desktop -->
+    <a id="gmailLink" class="btn" href="#" target="_blank">
+      <span>🚀</span> Otvoriť v Gmaili &amp; Odoslať (1 klik)
+    </a>
+
+    <a id="mailtoLink" class="btn btn-alt" href="#">
+      <span>📱</span> Otvoriť v Pošte na iPhone / Androide
+    </a>
+
+    <div class="preview-box" id="bodyPreview"></div>
+  </div>
+
+  <script>
+    const to = 'info@tmr.sk,b2b@tmr.sk,tatrymotion@tmr.sk';
+    const cc = 'workssro1@gmail.com';
+    const su = 'Nadviazanie kontaktu: Online terminál na depozity a kaucie pre zimnú sezónu TMR (Tatry Motion & Hotely)';
+    const body = `Vážený manažment TMR / Obchodné oddelenie,
+
+nadväzujem na našu predchádzajúcu správu ohľadom nasadenia systému na online blokáciu depozitov a kaucií pre nadchádzajúcu zimnú sezónu 2026/2027.
+
+Keďže sme zaznamenali technickú chybu na pôvodnej doméne pri doručovaní správ, kontaktujem Vás priamo z tohto aktívneho e-mailu.
+
+Prečo Vás oslovujeme pred spustením zimnej sezóny:
+Vo Vašich strediskách (Tatry Motion požičovne lyží a snowboardov) a hotelových zariadeniach denne riešite kaucie za športový výstroj a hotelové depozity.
+
+Náš systém B2B Pre-Auth Terminal umožňuje:
+1. Okamžitú blokáciu kaucie (Hold) cez mobil alebo web: Hosť autorizuje svoju kartu za 2 sekundy (napr. cez Apple Pay alebo kartu pri preberaní výstroja či check-in).
+2. Nulové náklady na fyzické POS krabičky: Nepotrebujete drahý prenájom desiatok hardvérových terminálov na svahoch a recepciách.
+3. Okamžité uvoľnenie alebo čiastkové zúčtovanie (Capture): Pri vrátení výstroja v poriadku jedným klikom kauciu uvoľníte; pri poškodení stiahnete presnú sumu.
+
+🚀 Bezplatná pilotná prevádzka pre TMR:
+Radi by sme Vám poskytli systém na 15 až 30 dní úplne ZADARMO na otestovanie vo vybranej prevádzke Tatry Motion alebo v jednom z Vašich hotelov.
+
+Živé interaktívne demo nášho systému si môžete pozrieť tu:
+👉 https://preauth-terminal.onrender.com
+
+V prípade záujmu o nezáväzné otestovanie alebo krátke predvedenie ma neváhajte kontaktovať priamo odpoveďou na tento e-mail.
+
+S úctou,
+
+Jozef Herák
+Konateľ, DH auto s.r.o.
+Email: workssro1@gmail.com
+Web: https://preauth-terminal.onrender.com`;
+
+    document.getElementById('bodyPreview').textContent = body;
+
+    const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1' +
+      '&to=' + encodeURIComponent(to) +
+      '&cc=' + encodeURIComponent(cc) +
+      '&su=' + encodeURIComponent(su) +
+      '&body=' + encodeURIComponent(body);
+
+    const mailtoUrl = 'mailto:' + encodeURIComponent(to) +
+      '?cc=' + encodeURIComponent(cc) +
+      '&subject=' + encodeURIComponent(su) +
+      '&body=' + encodeURIComponent(body);
+
+    document.getElementById('gmailLink').href = gmailUrl;
+    document.getElementById('mailtoLink').href = mailtoUrl;
+  </script>
+</body>
+</html>

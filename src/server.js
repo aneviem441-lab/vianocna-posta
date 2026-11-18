@@ -143,6 +143,13 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && (path === '/poslat-tmr' || path === '/poslat-tmr.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'poslat-tmr.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
       if (method === 'GET' && path.startsWith('/santa/js/')) {
         const fileName = decodeURIComponent(path.replace('/santa/js/', ''));
         const safeFile = join(ROOT_DIR, 'public', 'santa', 'js', fileName);
