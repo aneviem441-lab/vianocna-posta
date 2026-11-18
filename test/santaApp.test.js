@@ -53,3 +53,53 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
     server.close();
   }
 });
+
+test('Santa Slovak app routes /sk, /vianocna-posta, /sk/hovor and /hovor return 200 with Slovak content', async () => {
+  const { server } = createApp();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const resSk = await fetch(`http://127.0.0.1:${port}/sk`);
+    assert.equal(resSk.status, 200);
+    const htmlSk = await resSk.text();
+    assert.ok(htmlSk.includes("Vianočná pošta"));
+    assert.ok(htmlSk.includes("DH auto s.r.o."));
+    assert.ok(htmlSk.includes("Apple Pay"));
+    assert.ok(htmlSk.includes("enable-funding=card,applepay,venmo"));
+    assert.ok(htmlSk.includes("currency=EUR"));
+    assert.ok(htmlSk.includes("4,99 €"));
+    assert.ok(htmlSk.includes("5,99 €"));
+    assert.ok(!htmlSk.includes("30 sekúnd zadarmo")); // 0 free preview
+
+    const resVianocna = await fetch(`http://127.0.0.1:${port}/vianocna-posta`);
+    assert.equal(resVianocna.status, 200);
+
+    const resHovor = await fetch(`http://127.0.0.1:${port}/sk/hovor`);
+    assert.equal(resHovor.status, 200);
+    const htmlHovor = await resHovor.text();
+    assert.ok(htmlHovor.includes("Živý hovor so Santom Clausom"));
+    assert.ok(htmlHovor.includes("Prijať hovor od Santu"));
+    assert.ok(htmlHovor.includes("Santa počul:"));
+    assert.ok(htmlHovor.includes("Odomknúť a stiahnuť oficiálny diplom (1,00 €)"));
+    assert.ok(htmlHovor.includes("santa-sk-q6-farewell-milk-cookie.mp3"));
+
+    const resHovorAlias = await fetch(`http://127.0.0.1:${port}/hovor`);
+    assert.equal(resHovorAlias.status, 200);
+
+    // Test Slovak audio asset serving
+    const resSkAudio = await fetch(`http://127.0.0.1:${port}/santa/assets-sk/santa-sk-q0-greeting.mp3`);
+    assert.equal(resSkAudio.status, 200);
+    assert.equal(resSkAudio.headers.get('content-type'), 'audio/mpeg');
+    assert.equal(resSkAudio.headers.get('accept-ranges'), 'bytes');
+
+    // Test Range request for mobile iOS/Android
+    const resRangeSk = await fetch(`http://127.0.0.1:${port}/santa/assets-sk/santa-sk-q6-farewell-milk-cookie.mp3`, {
+      headers: { Range: 'bytes=0-10' }
+    });
+    assert.equal(resRangeSk.status, 206);
+    assert.equal(resRangeSk.headers.get('content-range'), 'bytes 0-10/176400');
+  } finally {
+    server.close();
+  }
+});

@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Živý hovor so Santom Clausom — Severný pól</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Great+Vibes&family=Inter:wght@400;600;700;800&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=EUR&components=buttons&enable-funding=card,applepay,venmo"></script>
+  <style>
+    :root {
+      --bg: #060c1c;
+      --card: #0d172e;
+      --gold: #f5c451;
+      --gold-dark: #b8860b;
+      --crimson: #c41e3a;
+      --text: #ffffff;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, select, textarea, button {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+    img {
+      -webkit-user-drag: none;
+      user-drag: none;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .call-wrap {
+      max-width: 900px; margin: 0 auto; width: 100%; flex: 1;
+      padding: 16px; display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* Ringing Screen */
+    #ringingScreen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1; text-align: center; padding: 40px 20px;
+    }
+    .ring-avatar {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 4px solid var(--gold); overflow: hidden; margin-bottom: 20px;
+      box-shadow: 0 0 30px rgba(245, 196, 81, 0.4);
+      animation: pulseRing 1.5s infinite;
+    }
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(245, 196, 81, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(196, 30, 58, 0.7); }
+    }
+    .ring-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .caller-id { font-family: 'Cinzel', serif; font-size: 26px; color: var(--gold); margin-bottom: 6px; }
+    .call-status { font-size: 14px; color: var(--muted); margin-bottom: 30px; }
+    .btn-answer {
+      background: #15803d; color: #fff; font-size: 18px; font-weight: 800;
+      padding: 16px 36px; border-radius: 999px; border: none; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(21, 128, 61, 0.5);
+      display: inline-flex; align-items: center; gap: 10px;
+      animation: bounce 1s infinite alternate;
+    }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+
+    /* Active Call Screen */
+    #activeScreen {
+      display: none; width: 100%; flex-direction: column; align-items: center;
+    }
+    #activeScreen.active { display: flex; }
+
+    .video-frame {
+      width: 100%; max-width: 600px; height: 420px; border-radius: 20px;
+      border: 3px solid rgba(245, 196, 81, 0.5); position: relative;
+      overflow: hidden; background: #000; box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+    }
+    @media (max-width: 640px) { .video-frame { height: 350px; } }
+
+    .santa-portrait-live {
+      width: 100%; height: 100%; object-fit: cover; object-position: top center;
+    }
+
+    /* Animated Mouth overlay */
+    .santa-mouth {
+      position: absolute; bottom: 27%; left: 47%; width: 34px; height: 16px;
+      background: #4a0404; border-radius: 50%; opacity: 0;
+      transition: height 0.08s, opacity 0.08s;
+      transform: translateX(-50%);
+    }
+    .santa-mouth.talking {
+      opacity: 0.85; animation: mouthMove 0.22s infinite alternate;
+    }
+    @keyframes mouthMove {
+      from { height: 8px; border-radius: 30%; }
+      to { height: 22px; border-radius: 50%; }
+    }
+
+    .call-bar-top {
+      position: absolute; top: 12px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      padding: 6px 12px; border-radius: 10px; font-size: 12px;
+    }
+    .timer { font-family: monospace; font-size: 15px; font-weight: 700; color: var(--gold); }
+    .rec-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #ef4444; font-weight: 700;
+    }
+    .rec-dot {
+      width: 8px; height: 8px; background: #ef4444; border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.2; } }
+
+    .sound-wave {
+      position: absolute; bottom: 12px; left: 14px; right: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      height: 24px;
+    }
+    .wave-bar {
+      width: 4px; height: 6px; background: var(--gold); border-radius: 2px;
+      animation: soundDance 0.6s infinite alternate;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes soundDance { from { height: 4px; } to { height: 22px; } }
+
+    /* Interactive Subtitle / Dialogue box */
+    .dialogue-box {
+      width: 100%; max-width: 600px; margin-top: 14px;
+      background: var(--card); border: 1px solid rgba(245, 196, 81, 0.25);
+      border-radius: 14px; padding: 14px 18px; text-align: center;
+      min-height: 72px; display: flex; flex-direction: column; justify-content: center;
+    }
+    .speech-text {
+      font-size: 15px; line-height: 1.4; color: #f8fafc;
+    }
+    .speech-sub {
+      font-size: 12px; color: var(--gold); margin-top: 4px;
+    }
+
+    /* Quick Answer Chips (Touch / Voice Hybrid Engine) */
+    .chips-container {
+      width: 100%; max-width: 600px; margin-top: 12px;
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    }
+    .chip-btn {
+      background: rgba(245, 196, 81, 0.15); border: 1px solid rgba(245, 196, 81, 0.4);
+      color: #fff; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px;
+      transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .chip-btn:hover, .chip-btn:active {
+      background: var(--gold); color: #000; transform: scale(1.04);
+      box-shadow: 0 4px 16px rgba(245, 196, 81, 0.5);
+    }
+
+    /* Controls */
+    .call-controls {
+      display: flex; gap: 16px; margin-top: 18px; align-items: center;
+    }
+    .btn-end {
+      background: var(--crimson); color: #fff; border: none;
+      padding: 12px 28px; border-radius: 999px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(196, 30, 58, 0.4);
+    }
+
+    /* Certificate Screen */
+    #certificateScreen {
+      display: none; width: 100%; max-width: 800px; flex-direction: column;
+      align-items: center; padding: 20px 10px;
+    }
+    #certificateScreen.active { display: flex; }
+
+    .cert-card {
+      width: 100%; background: #fffbf0; border-radius: 16px;
+      border: 8px double #c41e3a; padding: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    canvas#certCanvas {
+      width: 100%; height: auto; border-radius: 8px; display: block;
+      background: #fff;
+    }
+
+    .cert-actions {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; justify-content: center;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #f5c451 0%, #b8860b 100%);
+      color: #000; font-weight: 800; padding: 14px 28px; border-radius: 999px;
+      border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(245, 196, 81, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+      padding: 14px 24px; border-radius: 999px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+
+    .golden-book-toast {
+      background: rgba(245, 196, 81, 0.15); border: 1px solid var(--gold);
+      border-radius: 12px; padding: 10px 16px; margin-top: 14px;
+      display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gold);
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="call-wrap">
+    <!-- Ringing Screen -->
+    <div id="ringingScreen">
+      <div class="ring-avatar">
+        <img src="/santa/assets/santa-cinematic.png" alt="Santa Claus" />
+      </div>
+      <h1 class="caller-id">Santa Claus</h1>
+      <p class="call-status">Prichádzajúci satelitný hovor zo Severného pólu...</p>
+      <button id="answerBtn" class="btn-answer">
+        <span>📞</span> Prijať hovor od Santu
+      </button>
+      <p style="font-size:12px;color:var(--muted);margin-top:16px;">
+        💡 Pre najlepší zážitok si zapnite zvuk naplno
+      </p>
+    </div>
+
+    <!-- Active Call Screen -->
+    <div id="activeScreen">
+      <div class="video-frame">
+        <img class="santa-portrait-live" src="/santa/assets/santa-cinematic.png" alt="Santa Claus Live" />
+        <div id="santaMouth" class="santa-mouth"></div>
+        <div class="call-bar-top">
+          <span class="rec-badge"><span class="rec-dot"></span> ŽIVÝ HOVOR</span>
+          <span class="timer" id="callTimer">02:00</span>
+        </div>
+        <div class="sound-wave">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+      </div>
+
+      <div class="dialogue-box">
+        <div id="speechBubble" class="speech-text">Pripájanie k Severnému pólu...</div>
+        <div id="micStatus" class="speech-sub">🎙️ Pripravte sa na odpoveď Santovi...</div>
+      </div>
+
+      <!-- Quick Answer Chips (Child can tap or speak) -->
+      <div id="quickAnswers" class="chips-container" style="display:none;"></div>
+
+      <div id="goldenToast" class="golden-book-toast" style="display:none;">
+        📖 <strong id="goldenName">Oliver</strong> bol práve zapísaný do Zlatej knihy poslušných detí!
+      </div>
+
+      <div class="call-controls">
+        <button id="endCallBtn" class="btn-end">
+          <span>❌</span> Ukončiť hovor
+        </button>
+      </div>
+    </div>
+
+    <!-- Certificate / Diploma Screen -->
+    <div id="certificateScreen">
+      <h2 style="font-family:'Cinzel',serif;font-size:26px;color:var(--gold);margin-bottom:8px;text-align:center;">
+        🎄 Gratulujeme, <span id="certChildName"></span>!
+      </h2>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:18px;text-align:center;">
+        Santa Claus a škriatkovia ti vystavili oficiálny pamätný diplom dobrých detí.
+      </p>
+
+      <div class="cert-card">
+        <canvas id="certCanvas" width="1200" height="850"></canvas>
+      </div>
+
+      <!-- Unlock Box for €1.00 Diploma -->
+      <div id="unlockDiplomaBox" style="display:none;width:100%;max-width:540px;background:rgba(196,30,58,0.2);border:2px solid var(--gold);border-radius:16px;padding:20px;margin-top:20px;text-align:center;">
+        <h3 style="font-family:'Cinzel',serif;color:var(--gold);font-size:19px;margin-bottom:6px;">
+          ⭐ Odomknúť a stiahnuť oficiálny diplom (1,00 €)
+        </h3>
+        <p style="font-size:13px;color:#cbd5e1;margin-bottom:14px;">
+          Získajte originálny diplom vo vysokom tlačovom rozlíšení bez vodoznaku podpísaný Santom Clausom.
+        </p>
+        <div id="diploma-paypal-container"></div>
+      </div>
+
+      <div class="cert-actions">
+        <button id="downloadCertBtn" class="btn-gold" style="display:none;">
+          <span>📜</span> Stiahnuť diplom (PNG)
+        </button>
+        <button id="shareWhatsappBtn" class="btn-secondary">
+          <span>💬</span> Zdieľať s rodinou
+        </button>
+        <button id="callAgainBtn" class="btn-secondary">
+          <span>🔄</span> Späť na hlavnú stránku
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Security & Anti-DevTools Protection
+    (function() {
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, { capture: true });
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123 || ((e.ctrlKey || e.metaKey) && (e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67) || e.keyCode === 85 || e.keyCode === 83))) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, { capture: true });
+      document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; }, { capture: true });
+      try {
+        const noop = function() {};
+        ['log', 'info', 'warn', 'debug', 'table'].forEach(function(m) { window.console[m] = noop; });
+      } catch(e) {}
+    })();
+
+    // Background Holiday Music (Gentle Jingle Bells Chimes)
+    let audioCtx = null;
+    let bgMusicPlaying = false;
+    function startHolidayMusic() {
+      try {
+        if (bgMusicPlaying) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        audioCtx = new AudioContext();
+        bgMusicPlaying = true;
+
+        const NOTES = { 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99 };
+        const SCORE = [
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'G5', d: 0.28 }, { n: 'C5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 1.1 },
+          { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 },
+          { n: 'F5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.58 }, { n: 'G5', d: 0.58 }
+        ];
+
+        function playLoop() {
+          if (!bgMusicPlaying || !audioCtx) return;
+          let t = audioCtx.currentTime + 0.1;
+          SCORE.forEach(item => {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(NOTES[item.n], t);
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.040, t + 0.03);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + item.d * 0.9);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + item.d);
+            t += item.d;
+          });
+          setTimeout(playLoop, (t - audioCtx.currentTime) * 1000 + 1600);
+        }
+        playLoop();
+      } catch(e) {}
+    }
+
+    function stopHolidayMusic() {
+      bgMusicPlaying = false;
+      if (audioCtx) {
+        try { audioCtx.close(); } catch(e) {}
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const childName = (params.get('name') || 'Oliver').trim();
+    let isCertUnlocked = params.get('cert') === '1' || params.get('plan') === 'bundle' || params.get('plan') === 'sibling';
+
+    const ringingScreen = document.getElementById('ringingScreen');
+    const activeScreen = document.getElementById('activeScreen');
+    const certificateScreen = document.getElementById('certificateScreen');
+    const speechBubble = document.getElementById('speechBubble');
+    const santaMouth = document.getElementById('santaMouth');
+    const callTimer = document.getElementById('callTimer');
+    const goldenToast = document.getElementById('goldenToast');
+    const goldenName = document.getElementById('goldenName');
+
+    goldenName.textContent = childName;
+
+    let timerSeconds = 120; // 2 minúty plnohodnotného hovoru
+    let timerInterval = null;
+
+    // Dedicated HTMLAudioElement pre hlas Santu (100% kompatibilita pre iOS Safari & Android)
+    const santaVoicePlayer = new Audio();
+    santaVoicePlayer.preload = 'auto';
+
+    function playSantaAudio(src, text, onFinished) {
+      speechBubble.textContent = text;
+      santaMouth.classList.add('talking');
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.textContent = '🎅 Santa hovorí...';
+
+      let finished = false;
+      function done() {
+        if (finished) return;
+        finished = true;
+        santaMouth.classList.remove('talking');
+        if (onFinished) onFinished();
+      }
+
+      santaVoicePlayer.src = src;
+      santaVoicePlayer.currentTime = 0;
+      santaVoicePlayer.onended = done;
+      santaVoicePlayer.onerror = done;
+
+      const playPromise = santaVoicePlayer.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          setTimeout(done, 4000);
+        });
+      }
+
+      // Safety timeout: posunúť dialóg v prípade zaseknutia
+      setTimeout(done, 16000);
+    }
+
+    // Vysoko citlivé rozpoznávanie hlasu & dotykové tlačidlá (Hybrid Engine)
+    let activeSpeechRecognition = null;
+    let latestChildHeard = '';
+    let isSantaListening = false;
+
+    function startSpeechEngine() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      try {
+        if (activeSpeechRecognition) {
+          try { activeSpeechRecognition.abort(); } catch(e) {}
+        }
+        activeSpeechRecognition = new SpeechRec();
+        activeSpeechRecognition.lang = 'sk-SK';
+        activeSpeechRecognition.continuous = true;
+        activeSpeechRecognition.interimResults = true; // Okamžitá reakcia už na slabiky!
+        activeSpeechRecognition.maxAlternatives = 3;
+
+        activeSpeechRecognition.onresult = (e) => {
+          let interim = '';
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              final += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          const spoken = (final || interim).trim();
+          if (spoken && isSantaListening && typeof window._onChildSpoke === 'function') {
+            window._onChildSpoke(spoken);
+          }
+        };
+
+        activeSpeechRecognition.onerror = () => {};
+
+        activeSpeechRecognition.onend = () => {
+          if (isSantaListening) {
+            try { activeSpeechRecognition.start(); } catch(e) {}
+          }
+        };
+
+        try { activeSpeechRecognition.start(); } catch(e) {}
+      } catch(e) {}
+    }
+
+    function listenToChild(promptText, quickChips, maxWaitMs, onDone) {
+      isSantaListening = true;
+      santaMouth.classList.remove('talking');
+      startSpeechEngine();
+
+      speechBubble.innerHTML = `🎙️ <strong style="color:#fff">${promptText}</strong><br><span style="font-size:12px;color:var(--gold);margin-top:4px;display:inline-block;">👂 Hovor do telefónu alebo ťukni na odpoveď:</span>`;
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.innerHTML = '<span style="color:#22c55e;animation:pulse 1s infinite;">🟢 🎙️ Santa ťa práve pozorne počúva...</span>';
+
+      const chipsBox = document.getElementById('quickAnswers');
+      chipsBox.innerHTML = '';
+      if (quickChips && quickChips.length > 0) {
+        quickChips.forEach(chipText => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.textContent = chipText;
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleHeard(chipText);
+          });
+          chipsBox.appendChild(btn);
+        });
+        chipsBox.style.display = 'flex';
+      }
+
+      latestChildHeard = '';
+      let timer = null;
+      let completed = false;
+
+      function handleHeard(text) {
+        if (completed) return;
+        latestChildHeard = text;
+        speechBubble.innerHTML = `👂 Santa počul: <strong style="color:var(--gold);font-size:16px;">"${text}"</strong>`;
+        chipsBox.style.display = 'none';
+        clearTimeout(timer);
+        timer = setTimeout(finishListening, 1200);
+      }
+
+      function finishListening() {
+        if (completed) return;
+        completed = true;
+        isSantaListening = false;
+        clearTimeout(timer);
+        chipsBox.style.display = 'none';
+
+        if (latestChildHeard) {
+          speechBubble.innerHTML = `👂 Santa počul: <strong style="color:var(--gold);font-size:16px;">"${latestChildHeard}"</strong>`;
+          setTimeout(() => { onDone(latestChildHeard); }, 1000);
+        } else {
+          onDone('');
+        }
+      }
+
+      timer = setTimeout(finishListening, maxWaitMs);
+
+      window._onChildSpoke = function(transcript) {
+        handleHeard(transcript);
+      };
+    }
+
+    // Answer Call Handler
+    const answerBtn = document.getElementById('answerBtn');
+    let callAnswered = false;
+
+    function handleAnswerCall() {
+      if (callAnswered) return;
+      callAnswered = true;
+
+      try {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch(err) {}
+
+      ringingScreen.style.display = 'none';
+      activeScreen.classList.add('active');
+
+      try { startHolidayMusic(); } catch(err) {}
+      startCallTimer();
+      startInteractiveCall();
+    }
+
+    if (answerBtn) {
+      answerBtn.addEventListener('click', handleAnswerCall);
+    }
+
+    function startCallTimer() {
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        const m = Math.floor(timerSeconds / 60);
+        const s = timerSeconds % 60;
+        callTimer.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+
+        if (timerSeconds === 90) {
+          goldenToast.style.display = 'inline-flex';
+        }
+
+        if (timerSeconds <= 0) {
+          endCall();
+        }
+      }, 1000);
+    }
+
+    // Interaktívna sekvencia hovoru so Santom v slovenčine
+    function startInteractiveCall() {
+      // Krok 0: Autentické Ho Ho Ho + Privítanie v slovenčine
+      playSantaAudio('/santa/assets-sk/santa-ho-ho-ho.mp3', "🎅 HO HO HO! Veselé Vianoce!", () => {
+        playSantaAudio('/santa/assets-sk/santa-sk-q0-greeting.mp3', `Ho ho ho! Vitaj, dieťatko moje milé, ${childName}! Veselé Vianoce! Tu je Santa Claus priamo zo Severného pólu! Tak veľmi som sa tešil na náš dnešný rozhovor!`, () => {
+          step1_listenAllYear();
+        });
+      });
+    }
+
+    // Krok 1: Či poslúchali celý rok (User požiadavka)
+    function step1_listenAllYear() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q1-listen-all-year.mp3', "Povedz mi, anjelik môj, poslúchal si tento rok rodičov a pani učiteľky? Bol si dobrý po celý rok? Povedz Santovi, pozorne ťa počúvam!", () => {
+        const chips = ["⭐ Áno, veľmi som poslúchal!", "😇 Vždy počúvam rodičov!", "💖 Veľmi som sa snažil!"];
+        listenToChild("Poslúchal si tento rok?", chips, 7000, () => {
+          playSantaAudio('/santa/assets-sk/santa-sk-r1-listen-reaction.mp3', "Ho ho ho! To rád počujem! Moje škriatkovia si všetko zapisujú a hovoria mi, že si sa naozaj veľmi snažil!", () => {
+            step2_gifts();
+          });
+        });
+      });
+    }
+
+    // Krok 2: Aké chcú darčeky (User požiadavka)
+    function step2_gifts() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q2-gifts.mp3', "A prezraď mi, aké darčeky by si si najviac prial nájsť pod vianočným stromčekom? Po čom ti najviac túži srdiečko?", () => {
+        const chips = ["🧸 Krásne hračky a Lego!", "🎮 Videohru alebo tablet!", "🚲 Bicykel alebo kolobežku!", "🎁 Nechám sa prekvapiť!"];
+        listenToChild("Aké darčeky by si si prial?", chips, 7500, () => {
+          playSantaAudio('/santa/assets-sk/santa-sk-r2-gifts-reaction.mp3', "Ho ho ho! To je krásne vianočné želanie! Moji usilovní škriatkovia v dielni na Severnom póle už pracujú dňom i nocou na tých najkrajších hračkách!", () => {
+            step3_festiveFood();
+          });
+        });
+      });
+    }
+
+    // Krok 3: Čo radi jedia na Vianoce (User požiadavka)
+    function step3_festiveFood() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q3-festive-food.mp3', "A povedz mi, čo máš na Vianociach najradšej na jedenie? Chutia ti sladké medovníčky, voňavé koláčiky, alebo slávnostná večera?", () => {
+        const chips = ["🍪 Medovníčky a koláčiky!", "🍫 Sladkú čokoládu!", "🍗 Štedrovečernú večeru!", "🧁 Vianočné pečivo!"];
+        listenToChild("Čo máš najradšej na jedenie?", chips, 7000, () => {
+          playSantaAudio('/santa/assets-sk/santa-sk-r3-food-reaction.mp3', "Mňam, to znie priam rozprávkovo! Aj pani Clausová pečie tie najvoňavejšie medovníčky a sobík Rudolf si vždy rád pochutná na čerstvej mrkvičke!", () => {
+            step4_loveMost();
+          });
+        });
+      });
+    }
+
+    // Krok 4: Čo majú na Vianociach najradšej (User požiadavka)
+    function step4_loveMost() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q4-love-most.mp3', "A čo máš na celých Vianociach úplne, ale úplne najradšej? Sniežik a stavanie snehuliaka, ligotavý stromček, alebo keď ste všetci spolu ako rodinka?", () => {
+        const chips = ["❄️ Sneh a snehuliakov!", "🎄 Vianočný stromček a svetielka!", "👨‍👩‍👧 Rodinnú pohodu a lásku!", "🎁 Rozbaľovanie darčekov!"];
+        listenToChild("Čo máš na Vianociach najradšej?", chips, 7000, () => {
+          playSantaAudio('/santa/assets-sk/santa-sk-r4-love-reaction.mp3', "Ho ho ho! Byť spolu s rodinkou v teple domova, objímať sa a mať rád jeden druhého – to je ten najväčší vianočný zázrak na svete!", () => {
+            step5_songPoem();
+          });
+        });
+      });
+    }
+
+    // Krok 5: Básnička alebo pesnička (User požiadavka)
+    function step5_songPoem() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q5-song-poem.mp3', "A vieš čo? Poznáš nejakú peknú vianočnú básničku alebo pesničku? Zaspieval by si mi aspoň kúsok, napríklad Rolničky, rolničky? Santa by ťa tak rád počul!", () => {
+        const chips = ["🎵 Rolničky, rolničky!", "⭐ Tichá noc, svätá noc!", "📜 Krátku vianočnú básničku!"];
+        listenToChild("Zaspievaj alebo zarecituj Santovi kúsok!", chips, 8500, () => {
+          playSantaAudio('/santa/assets-sk/santa-sk-r5-song-reaction.mp3', "Ho ho ho! Bravo, to bolo nádherné! Priniesol si na Severný pól toľko vianočnej radosti, až sa všetky zvončeky rozcinkali!", () => {
+            step6_farewellMilkCookie();
+          });
+        });
+      });
+    }
+
+    // Krok 6: Rozlúčka, prísľub návštevy a mlieko so sušienkou (User požiadavka)
+    function step6_farewellMilkCookie() {
+      playSantaAudio('/santa/assets-sk/santa-sk-q6-farewell-milk-cookie.mp3', "Bolo mi obrovským potešením sa s tebou dnes rozprávať! A mám pre teba veľké tajomstvo: tento rok ťa určite prídem osobne navštíviť! Nezabudni ísť na Štedrý večer skoro spinkať a dúfam, že si na stole nájdem pohár studeného mlieka a chutnú sušienku! Teraz ti udeľujem Oficiálny diplom dobrých detí! Maj sa krásne, majte nádherné Vianoce celá rodinka a Ho Ho Ho!", () => {
+        setTimeout(endCall, 2000);
+      });
+    }
+
+    document.getElementById('endCallBtn').addEventListener('click', endCall);
+
+    function endCall() {
+      clearInterval(timerInterval);
+      stopHolidayMusic();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      activeScreen.classList.remove('active');
+      certificateScreen.classList.add('active');
+      document.getElementById('certChildName').textContent = childName;
+
+      renderCertificate();
+      updateDiplomaUI();
+    }
+
+    function updateDiplomaUI() {
+      const downloadBtn = document.getElementById('downloadCertBtn');
+      const unlockBox = document.getElementById('unlockDiplomaBox');
+
+      if (isCertUnlocked) {
+        if (downloadBtn) downloadBtn.style.display = 'inline-flex';
+        if (unlockBox) unlockBox.style.display = 'none';
+      } else {
+        if (downloadBtn) downloadBtn.style.display = 'none';
+        if (unlockBox) unlockBox.style.display = 'block';
+        renderDiplomaPayPal();
+      }
+    }
+
+    let diplomaPpRendered = false;
+    function renderDiplomaPayPal() {
+      if (diplomaPpRendered) return;
+      const container = document.getElementById('diploma-paypal-container');
+      if (!container || !window.paypal) return;
+      diplomaPpRendered = true;
+
+      window.paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'pay' },
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: `Oficiálny vianočný diplom pre dieťa: ${childName}`,
+              amount: { currency_code: 'EUR', value: '1.00' }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            fetch('/api/webhooks/paypal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: details.id,
+                event_type: 'PAYMENT.CAPTURE.COMPLETED',
+                summary: `Odomknutie diplomu (1.00 EUR) - ${childName}`,
+                amount: 1.00,
+                currency: 'EUR',
+                payerEmail: details.payer?.email_address,
+                status: 'COMPLETED',
+                raw: { orderId: data.orderID, captureId: details.id, childName: childName, item: 'diplom_1eur' }
+              })
+            }).catch(() => {});
+
+            isCertUnlocked = true;
+            renderCertificate();
+            updateDiplomaUI();
+
+            // Automatické stiahnutie odomknutého diplomu
+            const c = document.getElementById('certCanvas');
+            const a = document.createElement('a');
+            a.download = `Vianocny-Diplom-${childName.replace(/\s+/g, '_')}.png`;
+            a.href = c.toDataURL('image/png');
+            a.click();
+          });
+        },
+        onError: function() {
+          alert("Platbu sa nepodarilo dokončiť. Prosím skúste to znova.");
+        }
+      }).render('#diploma-paypal-container');
+    }
+
+    // Vykreslenie Slovenského Diplomu do Canvasu (Tlačová kvalita)
+    function renderCertificate() {
+      const c = document.getElementById('certCanvas');
+      const g = c.getContext('2d');
+
+      // Parchment gradient background
+      const bgGrad = g.createLinearGradient(0, 0, c.width, c.height);
+      bgGrad.addColorStop(0, '#fffbf0');
+      bgGrad.addColorStop(1, '#fdeece');
+      g.fillStyle = bgGrad;
+      g.fillRect(0, 0, c.width, c.height);
+
+      // Gold & Burgundy ornate borders
+      g.strokeStyle = '#c41e3a';
+      g.lineWidth = 14;
+      g.strokeRect(30, 30, c.width - 60, c.height - 60);
+
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 4;
+      g.strokeRect(46, 46, c.width - 92, c.height - 92);
+
+      // Header
+      g.textAlign = 'center';
+      g.fillStyle = '#1e293b';
+      g.font = '700 28px "Cinzel", serif';
+      g.fillText('HLAVNÝ ŠTÁB SEVERNÝ PÓL · OFICIÁLNA LISTINA', c.width / 2, 120);
+
+      g.fillStyle = '#c41e3a';
+      g.font = '900 60px "Cinzel", serif';
+      g.fillText('DIPLOM POSLUŠNÉHO DIEŤAŤA', c.width / 2, 200);
+
+      // Subhead
+      g.fillStyle = '#334155';
+      g.font = 'italic 26px "Georgia", serif';
+      g.fillText('Týmto sa slávnostne potvrdzuje, že Santa Claus a škriatkovia zapísali', c.width / 2, 275);
+
+      // Child Name in Calligraphy
+      g.fillStyle = '#c41e3a';
+      g.font = 'bold 84px "Great Vibes", cursive';
+      g.fillText(childName, c.width / 2, 385);
+
+      // Decorative Line
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(350, 420);
+      g.lineTo(850, 420);
+      g.stroke();
+
+      // Body description
+      g.fillStyle = '#1e293b';
+      g.font = '600 28px "Inter", sans-serif';
+      g.fillText('do Zlatej knihy poslušných detí pre Vianoce 2026', c.width / 2, 480);
+
+      g.font = '400 22px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('Za mimoriadnu poslušnosť, dobré srdiečko, láskavosť a radosť v duši.', c.width / 2, 530);
+
+      // Zlatá Vosková Pečať
+      g.fillStyle = '#b8860b';
+      g.beginPath();
+      g.arc(280, 680, 60, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#f5c451';
+      g.lineWidth = 4;
+      g.stroke();
+
+      g.fillStyle = '#ffffff';
+      g.font = 'bold 14px "Cinzel", serif';
+      g.fillText('OFICIÁLNA', 280, 672);
+      g.fillText('PEČAŤ', 280, 692);
+
+      // Podpis Santu Clausa
+      g.fillStyle = '#0f172a';
+      g.font = 'bold 52px "Great Vibes", cursive';
+      g.fillText('Santa Claus', 920, 680);
+
+      g.font = '600 16px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('SANTA CLAUS, SEVERNÝ PÓL', 920, 715);
+
+      // Dátum alebo Vodoznak
+      if (!isCertUnlocked) {
+        g.fillStyle = 'rgba(196, 30, 58, 0.12)';
+        g.fillRect(60, 740, c.width - 120, 46);
+        g.fillStyle = '#c41e3a';
+        g.font = 'bold 18px "Cinzel", serif';
+        g.fillText('NÁHĽAD DIPLOMU · ODOMKNITE ZA 1,00 € PRE STIAHNUTIE BEZ VODOZNAKU', c.width / 2, 770);
+      } else {
+        const dateStr = new Date().toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' });
+        g.fillText(`DÁTUM: ${dateStr}`, c.width / 2, 770);
+      }
+    }
+
+    // Stiahnutie diplomu
+    document.getElementById('downloadCertBtn').addEventListener('click', () => {
+      const c = document.getElementById('certCanvas');
+      const a = document.createElement('a');
+      a.download = `Vianocny-Diplom-${childName.replace(/\s+/g, '_')}.png`;
+      a.href = c.toDataURL('image/png');
+      a.click();
+    });
+
+    // Zdieľanie cez WhatsApp
+    document.getElementById('shareWhatsappBtn').addEventListener('click', () => {
+      const shareText = `🎄 Moje dieťa ${childName} práve malo rozprávkový živý hovor so Santom Clausom priamo zo Severného pólu a získalo Oficiálny diplom poslušných detí! Môžete si to vyskúšať tu: https://${window.location.host}/sk`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+    });
+
+    document.getElementById('callAgainBtn').addEventListener('click', () => {
+      window.location.href = '/sk';
+    });
+  </script>
+</body>
+</html>

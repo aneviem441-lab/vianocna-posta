@@ -122,8 +122,22 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && (path === '/sk' || path === '/sk/' || path === '/sk/index.html' || path === '/vianocna-posta' || path === '/vianocna-posta/')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'sk.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
       if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html);
+        return;
+      }
+
+      if (method === 'GET' && (path === '/sk/hovor' || path === '/sk/hovor.html' || path === '/hovor' || path === '/hovor.html' || path === '/santa/call-sk.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call-sk.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
         return;
@@ -149,10 +163,13 @@ export function createApp(options = {}) {
         }
       }
 
-      if (method === 'GET' && path.startsWith('/santa/assets/')) {
-        const fileName = decodeURIComponent(path.replace('/santa/assets/', ''));
-        const safeFile = join(ROOT_DIR, 'public', 'santa', 'assets', fileName);
-        if (resolve(safeFile).startsWith(join(ROOT_DIR, 'public', 'santa', 'assets'))) {
+      if (method === 'GET' && (path.startsWith('/santa/assets/') || path.startsWith('/santa/assets-sk/'))) {
+        const isSk = path.startsWith('/santa/assets-sk/');
+        const prefix = isSk ? '/santa/assets-sk/' : '/santa/assets/';
+        const subDir = isSk ? 'assets-sk' : 'assets';
+        const fileName = decodeURIComponent(path.replace(prefix, ''));
+        const safeFile = join(ROOT_DIR, 'public', 'santa', subDir, fileName);
+        if (resolve(safeFile).startsWith(join(ROOT_DIR, 'public', 'santa', subDir))) {
           try {
             const ext = extname(safeFile).toLowerCase();
             const mime =
