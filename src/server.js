@@ -108,14 +108,16 @@ export function createApp(options = {}) {
       const path = url.pathname;
       const method = req.method || 'GET';
 
-      if (method === 'GET' && (path === '/' || path === '/index.html')) {
+      const isGetOrHead = method === 'GET' || method === 'HEAD';
+
+      if (isGetOrHead && (path === '/' || path === '/index.html')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
+      if (isGetOrHead && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
         const langHeader = (req.headers['accept-language'] || '').toLowerCase();
         const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
         const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
@@ -123,25 +125,25 @@ export function createApp(options = {}) {
         const fileToServe = isSlovakOrCzech ? 'sk.html' : 'index.html';
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
+      if (isGetOrHead && (path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/sk' || path === '/sk/' || path === '/sk/index.html' || path === '/vianocna-posta' || path === '/vianocna-posta/')) {
+      if (isGetOrHead && (path === '/sk' || path === '/sk/' || path === '/sk/index.html' || path === '/vianocna-posta' || path === '/vianocna-posta/')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'sk.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html')) {
+      if (isGetOrHead && (path === '/santa/call' || path === '/santa/call.html')) {
         const langHeader = (req.headers['accept-language'] || '').toLowerCase();
         const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
         const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
@@ -149,28 +151,28 @@ export function createApp(options = {}) {
         const fileToServe = isSlovakOrCzech ? 'call-sk.html' : 'call.html';
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/us/call' || path === '/en/call')) {
+      if (isGetOrHead && (path === '/us/call' || path === '/en/call')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/sk/hovor' || path === '/sk/hovor.html' || path === '/hovor' || path === '/hovor.html' || path === '/santa/call-sk.html')) {
+      if (isGetOrHead && (path === '/sk/hovor' || path === '/sk/hovor.html' || path === '/hovor' || path === '/hovor.html' || path === '/santa/call-sk.html')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call-sk.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (method === 'GET' && (path === '/poslat-tmr' || path === '/poslat-tmr.html')) {
+      if (isGetOrHead && (path === '/poslat-tmr' || path === '/poslat-tmr.html')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'poslat-tmr.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(html);
+        res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
