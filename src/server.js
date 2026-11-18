@@ -183,6 +183,13 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (isGetOrHead && (path === '/launch-sk' || path === '/launch-sk.html' || path === '/kampan' || path === '/propagacia')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'launch-sk.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : html);
+        return;
+      }
+
       if (isGetOrHead && path === '/robots.txt') {
         const txt = await readFile(join(ROOT_DIR, 'public', 'robots.txt'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
