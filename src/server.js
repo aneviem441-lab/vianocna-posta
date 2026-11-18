@@ -115,7 +115,7 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
+      if (method === 'GET' && (path === '/santa' || path === '/santa/' || path === '/santa/index.html' || path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
@@ -129,7 +129,7 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html')) {
+      if (method === 'GET' && (path === '/santa/call' || path === '/santa/call.html' || path === '/us/call' || path === '/en/call')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);

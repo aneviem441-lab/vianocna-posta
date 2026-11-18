@@ -19,6 +19,15 @@ test('Santa English app routes /santa and /santa/call return 200 with English ti
 
     const resCall = await fetch(`http://127.0.0.1:${port}/santa/call`);
     assert.equal(resCall.status, 200);
+
+    const resUs = await fetch(`http://127.0.0.1:${port}/us`);
+    assert.equal(resUs.status, 200);
+
+    const resEn = await fetch(`http://127.0.0.1:${port}/en`);
+    assert.equal(resEn.status, 200);
+
+    const resUsCall = await fetch(`http://127.0.0.1:${port}/us/call`);
+    assert.equal(resUsCall.status, 200);
     const htmlCall = await resCall.text();
     assert.ok(htmlCall.includes("Live Call with Santa Claus"));
     assert.ok(htmlCall.includes("Download Official Certificate (PNG)"));
