@@ -197,6 +197,12 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (isGetOrHead && path === '/c7e2b834918f4a1fa327e58914ba98de.txt') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('c7e2b834918f4a1fa327e58914ba98de');
+        return;
+      }
+
       if (method === 'GET' && path.startsWith('/santa/js/')) {
         const fileName = decodeURIComponent(path.replace('/santa/js/', ''));
         const safeFile = join(ROOT_DIR, 'public', 'santa', 'js', fileName);
