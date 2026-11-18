@@ -110,25 +110,52 @@ export function createApp(options = {}) {
 
       const isGetOrHead = method === 'GET' || method === 'HEAD';
 
-      if (isGetOrHead && (path === '/' || path === '/index.html')) {
+      // B2B Terminal for Tatry Mountain Resorts (TMR)
+      if (isGetOrHead && (path === '/b2b' || path === '/b2b/' || path === '/admin' || path === '/terminal')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
-      if (isGetOrHead && (path === '/santa' || path === '/santa/' || path === '/santa/index.html')) {
+      // Root route: serves the authentic Lovable Santa app (or US version if requested)
+      if (isGetOrHead && (path === '/' || path === '/index.html')) {
         const langHeader = (req.headers['accept-language'] || '').toLowerCase();
         const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
-        const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
-
-        const fileToServe = isSlovakOrCzech ? 'sk.html' : 'index.html';
-        const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
+        const isUs = (countryHeader === 'US' || countryHeader === 'GB' || countryHeader === 'CA') && !url.searchParams.has('sk');
+        
+        const fileToServe = isUs ? join(ROOT_DIR, 'public', 'santa', 'index.html') : join(ROOT_DIR, 'public', 'lovable-app', 'index.html');
+        const html = await readFile(fileToServe, 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(method === 'HEAD' ? undefined : html);
         return;
       }
 
+      // Slovak Lovable Santa Landing Page
+      if (isGetOrHead && (path === '/sk' || path === '/sk/' || path === '/sk/index.html' || path === '/vianocna-posta' || path === '/vianocna-posta/' || path === '/santa' || path === '/santa/')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'lovable-app', 'index.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : html);
+        return;
+      }
+
+      // Slovak Lovable Santa Live Voice Call
+      if (isGetOrHead && (path === '/hovor' || path === '/hovor.html' || path === '/sk/hovor' || path === '/sk/hovor.html' || path === '/santa/call-sk.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'lovable-app', 'hovor.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : html);
+        return;
+      }
+
+      // Parents Info Page
+      if (isGetOrHead && (path === '/rodicia' || path === '/rodicia.html')) {
+        const html = await readFile(join(ROOT_DIR, 'public', 'lovable-app', 'rodicia.html'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(method === 'HEAD' ? undefined : html);
+        return;
+      }
+
+      // American English Santa routes
       if (isGetOrHead && (path === '/us' || path === '/us/' || path === '/en' || path === '/en/')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'index.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -136,34 +163,8 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (isGetOrHead && (path === '/sk' || path === '/sk/' || path === '/sk/index.html' || path === '/vianocna-posta' || path === '/vianocna-posta/')) {
-        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'sk.html'), 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(method === 'HEAD' ? undefined : html);
-        return;
-      }
-
-      if (isGetOrHead && (path === '/santa/call' || path === '/santa/call.html')) {
-        const langHeader = (req.headers['accept-language'] || '').toLowerCase();
-        const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-country'] || '').toUpperCase();
-        const isSlovakOrCzech = countryHeader === 'SK' || countryHeader === 'CZ' || langHeader.startsWith('sk') || langHeader.startsWith('cs');
-
-        const fileToServe = isSlovakOrCzech ? 'call-sk.html' : 'call.html';
-        const html = await readFile(join(ROOT_DIR, 'public', 'santa', fileToServe), 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(method === 'HEAD' ? undefined : html);
-        return;
-      }
-
-      if (isGetOrHead && (path === '/us/call' || path === '/en/call')) {
+      if (isGetOrHead && (path === '/us/call' || path === '/en/call' || path === '/santa/call')) {
         const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call.html'), 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(method === 'HEAD' ? undefined : html);
-        return;
-      }
-
-      if (isGetOrHead && (path === '/sk/hovor' || path === '/sk/hovor.html' || path === '/hovor' || path === '/hovor.html' || path === '/santa/call-sk.html')) {
-        const html = await readFile(join(ROOT_DIR, 'public', 'santa', 'call-sk.html'), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(method === 'HEAD' ? undefined : html);
         return;
@@ -230,7 +231,51 @@ export function createApp(options = {}) {
         }
       }
 
-      if (method === 'GET' && (path.startsWith('/santa/assets/') || path.startsWith('/santa/assets-sk/'))) {
+            // Lovable static assets (/assets/*)
+      if (method === 'GET' && path.startsWith('/assets/')) {
+        const fileName = decodeURIComponent(path.replace('/assets/', ''));
+        const safeFile = join(ROOT_DIR, 'public', 'lovable-app', 'assets', fileName);
+        if (resolve(safeFile).startsWith(join(ROOT_DIR, 'public', 'lovable-app', 'assets'))) {
+          try {
+            const ext = extname(safeFile).toLowerCase();
+            const mime =
+              ext === '.css'
+                ? 'text/css; charset=utf-8'
+                : ext === '.js'
+                  ? 'application/javascript; charset=utf-8'
+                  : ext === '.png'
+                    ? 'image/png'
+                    : ext === '.jpg' || ext === '.jpeg'
+                      ? 'image/jpeg'
+                      : ext === '.mp3'
+                        ? 'audio/mpeg'
+                        : ext === '.json'
+                          ? 'application/json; charset=utf-8'
+                          : 'application/octet-stream';
+
+            const fileData = await readFile(safeFile);
+            res.writeHead(200, {
+              'Content-Type': mime,
+              'Cache-Control': 'public, max-age=86400',
+              'X-Content-Type-Options': 'nosniff'
+            });
+            res.end(fileData);
+            return;
+          } catch {
+            sendJson(res, 404, { error: 'Asset not found', code: 'ASSET_NOT_FOUND' });
+            return;
+          }
+        }
+      }
+
+      // Lovable telemetry stub
+      if (path.startsWith('/__l5e/')) {
+        res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+        res.end('/* lovable telemetry disabled */');
+        return;
+      }
+
+if (method === 'GET' && (path.startsWith('/santa/assets/') || path.startsWith('/santa/assets-sk/'))) {
         const isSk = path.startsWith('/santa/assets-sk/');
         const prefix = isSk ? '/santa/assets-sk/' : '/santa/assets/';
         const subDir = isSk ? 'assets-sk' : 'assets';

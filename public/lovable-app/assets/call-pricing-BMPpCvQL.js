@@ -1,0 +1,1 @@
+function e(e){return new Intl.NumberFormat(`sk-SK`,{style:`currency`,currency:`EUR`}).format(e/100)}export{e as t};
