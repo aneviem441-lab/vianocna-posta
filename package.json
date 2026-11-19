@@ -1,11 +1,10 @@
 {
-  "name": "preauth-terminal",
+  "name": "vianocna-posta",
   "version": "1.0.0",
-  "description": "B2B Pre-Authorization & Approval-Code Capture Terminal (Simulator + PayPal Orders v2)",
+  "description": "Oficiálna slovenská aplikácia Vianočná pošta - Živý interaktívny hovor so Santom Clausom",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "test": "node --test test/*.test.js"
+    "start": "node src/server.js"
   },
   "engines": {
     "node": ">=20.0.0"
